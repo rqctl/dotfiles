@@ -1,0 +1,22 @@
+# Repo-only files, never deployed to the home directory.
+README.md
+docs
+docs/**
+
+# Upstream clones and superseded backups, installed by custom_local_pc_setup.sh.
+.oh-my-zsh/custom/plugins
+.oh-my-zsh/custom/plugins/**
+.oh-my-zsh/custom/themes
+.oh-my-zsh/custom/themes/**
+
+{{ if not .isWork -}}
+# Work-only modules; skipped on a personal machine.
+.oh-my-zsh/custom/40-cloud.zsh
+.oh-my-zsh/custom/50-navigation.zsh
+.config/ghorg
+.config/ghorg/**
+.config/glab-cli
+.config/glab-cli/**
+.config/mise/conf.d/tasks.toml
+.vault
+{{ end -}}

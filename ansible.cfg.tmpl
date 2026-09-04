@@ -1,0 +1,34 @@
+[defaults]
+force_color = True
+roles_path = ~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:./roles:../roles:../../roles:{{ .repoRoot }}/on-premise/ansible/roles:{{ .repoRoot }}/on-premise/ansible-tools/roles
+collections_path = $VIRTUAL_ENV/ansible/collections 
+module_path = ~/plugins/modules:/usr/share/ansible/plugins/modules:~.
+
+force_valid_group_names = silently
+host_key_checking = False
+callbacks_enabled = profile_tasks
+local_tmp = /tmp/.ans-${USER}/
+remote_tmp = /tmp/.ans-${USER}/
+timeout = 30
+task_timeout = 600
+interpreter_python = auto_silent
+display_skipped_hosts = true
+forks = 50
+fact_caching_connection = ~/.cache/ansible-inventory
+fact_caching_timeout = 432000
+
+[ssh_connection]
+ssh_args = -o ControlMaster=auto -o ControlPersist=600 -o PreferredAuthentications=publickey -o ServerAliveInterval=60
+pipelining = True
+
+[privilege_escalation]
+# proper sudoers config required
+become = True
+
+[inventory]
+cache = True
+cache_plugin = jsonfile
+#enable_plugins = host_list, script, auto, yaml, ini, toml
+#enable_plugins = host_list, script, auto, yaml, ini, toml, community.vmware.vmware_vm_inventory
+enable_plugins = host_list, script, auto, yaml, ini, toml
+#enable_plugins = host_list, script, auto, yaml, ini, toml, community.vmware.vmware_vm_inventory, netbox.netbox.nb_inventory

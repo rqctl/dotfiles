@@ -1,0 +1,11 @@
+# Machine-local secrets and overrides. Copy to ~/.zshrc.local and chmod 600.
+# This file is sourced by ~/.zshrc.custom and is NEVER versioned.
+
+export GITHUB_TOKEN=""
+export GITLAB_TOKEN=""
+export GITLAB_ADMIN_TOKEN=""
+export GHORG_GITLAB_TOKEN="$GITLAB_TOKEN"
+export OKTA_API_TOKEN=""
+export SONARQUBE_TOKEN=""
+#export CLOUDFLARE_API_TOKEN=""
+#export CLOUDFLARE_TOKEN=""

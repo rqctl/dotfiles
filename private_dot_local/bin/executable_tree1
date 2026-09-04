@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Minimal, elegant directory view for humans
+
+DIR="${1:-$PWD}"
+
+# Colors
+DIM="\033[2m"
+RESET="\033[0m"
+
+# Show directory tree (visible entries)
+tree "$DIR" -L 1 --dirsfirst --noreport -C -I ".*"
+
+# Separator for dotfiles
+dotfiles=$(tree "$DIR" -L 1 -a --dirsfirst --noreport -C -I "[^.]*" | tail -n +2)
+if [[ -n "$dotfiles" ]]; then
+  printf "\n%b── dotfiles ──────────────────────────%b\n" "$DIM" "$RESET"
+  echo "$dotfiles"
+fi
+

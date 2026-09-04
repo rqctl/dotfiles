@@ -1,0 +1,90 @@
+{
+  "editor.minimap.enabled": false,
+  "files.autoSave": "onFocusChange",
+  "files.exclude": {
+    "**/.terragrunt-cache": true,
+    "**/.terraform*": true
+  },
+  "git.autofetch": true,
+  "git.autofetchPeriod": 3600,
+  "git.autoRepositoryDetection": "openEditors",
+  "git.repositoryScanIgnoredFolders": [
+    ".terragrunt-cache",
+    "node_modules",
+    ".terraform",
+    ".powerpipe"
+  ],
+  "git.repositoryScanMaxDepth": 6,
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "gitlens.remotes": [
+    {
+      "domain": "{{ .org.gitlabHost }}",
+      "type": "GitLab"
+    }
+  ],
+  "scm.providerCountBadge": "auto",
+  "scm.repositories.sortOrder": "name",
+  "scm.repositories.visible": 0,
+  "terminal.explorerKind": "external",
+  "terminal.external.linuxExec": "/usr/bin/tilix",
+  "terminal.integrated.copyOnSelection": true,
+  "terminal.integrated.fontFamily": "\"MesloLGS NF\"",
+  "yaml.customTags": [ "!reference sequence"],
+  "files.watcherExclude": {
+    "**/.terragrunt-cache/**": true
+  },
+  "git.confirmSync": false,
+  "git.blame.statusBarItem.enabled": true,
+  "github.copilot.chat.codesearch.enabled": true,
+  "github.copilot.chat.useResponsesApi": true,
+  "github.copilot.chat.notebook.enhancedNextEditSuggestions.enabled": true,
+  "github.copilot.chat.languageContext.inline.typescript.enabled": true,
+  "github.copilot.chat.languageContext.fix.typescript.enabled": true,
+  "github.copilot.chat.agent.thinkingTool": true,
+  "github.copilot.enable": {
+    "*": true,
+    "dotenv": false,
+    "markdown": true,
+    "plaintext": false,
+    "scminput": false,
+    "yaml": true
+  },
+  "github.copilot.chat.summarizeAgentConversationHistory.enabled": true,
+  "[yaml]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "keep",
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.defaultColorDecorators": "never",
+    "editor.quickSuggestions": {
+      "strings": true,
+      "other": true,
+      "comments": false
+    }
+  },
+  "editor.tabSize": 2,
+  "explorer.confirmDelete": false,
+  "python.defaultInterpreterPath": "{{ .repoRoot }}/idp/integration-and-delivery-plane/building-blocks/.venv",
+  "editor.detectIndentation": false,
+  "prettier.tabWidth": 1,
+  "files.associations": {
+    "*.tmpl": "go-template",
+    "startup-script.tpl": "shellscript"
+  },
+  "chat.viewSessions.orientation": "stacked",
+  "editor.renderWhitespace": "none",
+  "claudeCode.preferredLocation": "panel",
+  "claudeCode.selectedModel": "default",
+  "workbench.colorTheme": "Dark Modern",
+  "vs-kubernetes": {
+    "vs-kubernetes.crd-code-completion": "disabled",
+    "vs-kubernetes.ignore-recommendations": true
+  },
+  "git.blame.editorDecoration.enabled": true,
+  "yaml.schemas": {
+  "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json": [
+    "**/ansible/roles/**/tasks/*.yml",
+    "**/ansible/roles/**/tasks/*.yaml"
+  ]
+  }
+}

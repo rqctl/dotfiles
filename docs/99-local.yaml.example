@@ -1,0 +1,18 @@
+# Copy to .chezmoidata/99-local.yaml in the chezmoi source dir (`chezmoi cd`),
+# fill in your organisation's values, then run `chezmoi apply`.
+# This file is git-ignored: it never reaches the repo.
+org:
+  gitlabHost: gitlab.your-company.example       # self-hosted GitLab host
+  wikiUrl: https://wiki.your-company.example    # internal docs root
+  vpnOrg: your-vpn-org                          # cloudflare warp registration name ("" to skip)
+  awsProfile: default                           # default AWS_PROFILE
+  gcpQuotaProject: your-gcp-quota-project       # GOOGLE_CLOUD_QUOTA_PROJECT
+  gcpProjectFilter: "project_id ~ prefix-"      # gcloud filter used by gssh
+  ghorgOrgs: group-a group-b group-c            # space-separated groups for ghorgca
+  debugImage: registry.example/path/image:tag   # image for the k9s debug plugin
+  vault:
+    addrs:                                      # first entry last = default instance
+      - https://vault-a.your-company.example
+      - https://vault-b.your-company.example
+    authPath: oidc                              # vault auth mount name
+    authRole: your-vault-role

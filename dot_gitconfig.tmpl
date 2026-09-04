@@ -1,0 +1,16 @@
+[pull]
+	rebase = true
+[core]
+	editor = vim
+	pager =
+[gpg]
+	program = gpg
+
+# Identity is never set globally: it is chosen by repo location, so a work
+# commit can never pick up the personal identity or vice versa.
+[includeIf "gitdir:{{ .repoRoot }}/"]
+	path = ~/.config/git/config-work
+[includeIf "gitdir:~/github/"]
+	path = ~/.config/git/config-personal
+[includeIf "gitdir:~/.local/share/chezmoi/"]
+	path = ~/.config/git/config-personal

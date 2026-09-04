@@ -1,0 +1,138 @@
+[[- /* chezmoi:template:left-delimiter=[[ right-delimiter=]] */ -]]
+plugins:
+  debug:
+    shortCut: Shift-D
+    description: Add debug container
+    dangerous: true
+    scopes:
+      - containers
+    command: bash
+    background: false
+    confirm: true
+    args:
+      - -c
+      - "kubectl debug -it --context $CONTEXT -n=$NAMESPACE $POD --target=$NAME --image=[[ .org.debugImage ]] --share-processes -- bash"
+  crossplane-trace:
+    shortCut: Shift-T
+    confirm: false
+    description: "Crossplane Trace"
+    scopes:
+      - bucketpreviews
+      - buckets
+      - metricmonitors
+      - monitors
+      - onlinearchives
+      - pubsubs
+      - searchindexes
+      - serviceaccountpreviews
+      - serviceaccounts
+      - slos
+      - topics
+      - users
+      - virtualmachines
+      - xbucketpreviews
+      - xbuckets
+      - xmetricmonitors
+      - xonlinearchives
+      - xpubsub
+      - xsearchindexes
+      - xserviceaccountpreviews
+      - xserviceaccounts
+      - xslos
+      - xtopics
+      - xusers
+      - xvirtualmachines
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        if [ -n "$NAMESPACE" ]; then
+          crossplane beta trace --context $CONTEXT -n $NAMESPACE $RESOURCE_NAME.$RESOURCE_GROUP $NAME -owide | less -K
+        else
+          crossplane beta trace --context $CONTEXT $RESOURCE_NAME.$RESOURCE_GROUP $NAME -owide | less -K
+        fi
+  crossplane-watch:
+    shortCut: Shift-W
+    confirm: false
+    description: "Crossplane Watch"
+    scopes:
+      - bucketpreviews
+      - buckets
+      - metricmonitors
+      - monitors
+      - onlinearchives
+      - pubsubs
+      - searchindexes
+      - serviceaccountpreviews
+      - serviceaccounts
+      - slos
+      - topics
+      - users
+      - virtualmachines
+      - xbucketpreviews
+      - xbuckets
+      - xmetricmonitors
+      - xonlinearchives
+      - xpubsub
+      - xsearchindexes
+      - xserviceaccountpreviews
+      - xserviceaccounts
+      - xslos
+      - xtopics
+      - xusers
+      - xvirtualmachines
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        if [ -n "$NAMESPACE" ]; then
+          viddy -pw 'crossplane beta trace --context $CONTEXT -n $NAMESPACE $RESOURCE_NAME.$RESOURCE_GROUP $NAME -owide'
+        else
+          viddy -pw 'crossplane beta trace --context $CONTEXT $RESOURCE_NAME.$RESOURCE_GROUP $NAME -owide'
+        fi
+  refresh-external-secrets:
+    shortCut: Shift-R
+    confirm: false
+    scopes:
+      - externalsecrets
+    description: Refresh the externalsecret
+    command: bash
+    background: true
+    args:
+      - -c
+      - "kubectl annotate externalsecrets.external-secrets.io --context $CONTEXT -n $NAMESPACE $NAME force-sync=$(date +%s) --overwrite"
+  remove_finalizers:
+    shortCut: Ctrl-F
+    confirm: true
+    dangerous: true
+    scopes:
+      - all
+    description: "Removes all finalizers"
+    command: kubectl
+    background: true
+    args:
+      - patch
+      - --context
+      - $CONTEXT
+      - --namespace
+      - $NAMESPACE
+      - $RESOURCE_NAME.$RESOURCE_GROUP
+      - $NAME
+      - -p
+      - '{"metadata":{"finalizers":null}}'
+      - --type
+      - merge
+  show-taints:
+    shortCut: t
+    confirm: false
+    description: "Node Taints"
+    scopes:
+      - nodes
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        kubectl --context $CONTEXT get node $NAME -o go-template='{{range .spec.taints}}{{.key}}={{.value}}:{{.effect}}{{"\n"}}{{end}}' | column -t -s "=" | column -t -s ":" | less

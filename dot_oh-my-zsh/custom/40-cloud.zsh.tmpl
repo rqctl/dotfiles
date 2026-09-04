@@ -1,0 +1,199 @@
+# ----- CLOUD -----
+
+## -----  SSH  -----
+
+# Cache "$@" stdout under ~/.cache/gssh; gcloud list calls are slow.
+# Caches only a successful, non-empty run — an unauthenticated gcloud would
+# otherwise pin an empty list for the day. Falls back to a stale cache.
+_gssh_cached() {
+    local key="$1"; shift
+    local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/gssh"
+    local cache_file="$cache_dir/$key" tmp
+    local cache_duration_s=86400
+    mkdir -p "$cache_dir"
+
+    if [[ -s "$cache_file" ]] && (( $(date +%s) - $(date +%s -r "$cache_file") <= $cache_duration_s )); then
+        command cat "$cache_file"
+        return 0
+    fi
+
+    tmp="$cache_file.$$"
+    if "$@" > "$tmp" && [[ -s "$tmp" ]]; then
+        command mv "$tmp" "$cache_file"
+    else
+        command rm -f "$tmp"
+        [[ -s "$cache_file" ]] || return 1
+        echo "gssh: could not refresh '$key', using the cached copy." >&2
+    fi
+    command cat "$cache_file"
+}
+
+# Drop the host key of one instance, so IAP's recycled IPs stop blocking logins.
+# Without an instance id there is nothing to target, hence the blunt fallback.
+_gssh_forget_host() {
+    local instance_id="$1" kh="$HOME/.ssh/google_compute_known_hosts"
+    [[ -f "$kh" ]] || return 0
+    if [[ -n "$instance_id" ]]; then
+        ssh-keygen -q -R "compute.$instance_id" -f "$kh" &>/dev/null
+    else
+        echo "" > "$kh"
+    fi
+}
+
+# Usage: gssh [-f] — pick a project and instance, then SSH in through IAP.
+# -f drops the cached project/instance lists first.
+gssh() {
+    local flush=0 opt OPTIND=1
+    while getopts "fh" opt; do
+        case $opt in
+            f) flush=1 ;;
+            h) echo "Usage: gssh [-f]   (-f: refresh the cached project/instance lists)"; return 0 ;;
+            *) echo "Usage: gssh [-f]"; return 1 ;;
+        esac
+    done
+    (( flush )) && command rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/gssh"/{projects,instances_*}
+
+    local projects instances instance_with_zone gcp_project gcp_instance gcp_zone
+
+    # projectId, not name: --project rejects display names, and the two differ
+    # for some projects.
+    projects=$(_gssh_cached projects \
+        gcloud projects list --filter='{{ .org.gcpProjectFilter }}' --format='value(projectId)') \
+        || { echo "Cannot list GCP projects — run login_gcp, then gssh -f."; return 1; }
+    gcp_project=$(sort <<< "$projects" | fzf -1 -e --prompt="Select GCP Project: ")
+    [[ -z $gcp_project ]] && return 1
+
+    instances=$(_gssh_cached "instances_${gcp_project}" \
+        gcloud --project "$gcp_project" compute instances list \
+        --format="value(name,zone.basename(),id)" --sort-by="name") \
+        || { echo "Cannot list instances of $gcp_project — run login_gcp, then gssh -f."; return 1; }
+    # The id is carried along for _gssh_forget_host but kept out of the picker.
+    instance_with_zone=$(column -t <<< "$instances" \
+        | fzf -1 -e --with-nth=1,2 --prompt="Select instance: ")
+    [[ -z $instance_with_zone ]] && return 1
+
+    gcp_instance=$(awk '{print $1}' <<< "$instance_with_zone")
+    gcp_zone=$(awk '{print $2}' <<< "$instance_with_zone")
+    _gssh_forget_host "$(awk '{print $3}' <<< "$instance_with_zone")"
+
+    local command_ssh="gcloud --project $gcp_project compute ssh $gcp_instance --zone $gcp_zone --tunnel-through-iap"
+    echo $command_ssh && print -s "$command_ssh"
+    eval $command_ssh
+}
+
+## -----  Login  -----
+
+_login_vault_usage() {
+    echo "Usage: login_vault [-t] [-l] [-r|-f] [-s|-a] [-h]"
+    echo "  -t   Export VAULT_TOKEN after login"
+    echo "  -l   List all stored tokens and exit"
+    echo "  -r   Renew the current token"
+    echo "  -f   Force re-authentication"
+    echo "  -s   Select Vault instance interactively"
+    echo "  -a   Login to all Vault instances"
+    echo "  -h   Show this help message"
+}
+
+# Usage: _vault_login <force> <renew> — authenticate against $VAULT_ADDR.
+_vault_login() {
+    local force="$1" renew="$2" auth
+    vault token lookup &>/dev/null
+    auth=$?
+    if [[ $force -eq 1 || $auth -ne 0 ]]; then
+        echo "Reauthenticating with $VAULT_ADDR..."
+        vault login -field=token -method=oidc -path={{ .org.vault.authPath }} role={{ .org.vault.authRole }}
+    elif [[ $renew -eq 1 ]]; then
+        echo "Renewing token with $VAULT_ADDR..."
+        vault token renew
+    else
+        echo "Vault already logged in with $VAULT_ADDR!"
+    fi
+}
+
+# Usage: login_vault [-h]
+# OIDC login to Vault; defaults to the last instance in the list.
+login_vault() {
+    local force=0 all=0 renew=0 pick=0 settoken=0 option
+    local vaults=(
+{{- range .org.vault.addrs }}
+        {{ . | quote }}
+{{- end }}
+    )
+    local default_vault="${vaults[-1]}"
+
+    while getopts "sraflth" option; do
+        case $option in
+            r) renew=1 ;;
+            a) all=1 ;;
+            f) force=1 ;;
+            s) pick=1 ;;
+            t) settoken=1 ;;
+            l) vault-token-helper list -e; return $? ;;
+            h) _login_vault_usage; return 0 ;;
+            *) _login_vault_usage; return 1 ;;
+        esac
+    done
+
+    if [[ $renew -eq 1 && $force -eq 1 ]]; then
+        echo "Error: -r and -f options are mutually exclusive" && return 1
+    elif [[ $pick -eq 1 && $all -eq 1 ]]; then
+        echo "Error: -s and -a options are mutually exclusive" && return 1
+    fi
+
+    if [[ $pick -eq 1 ]]; then
+        export VAULT_ADDR=$(printf "%s\n" "${vaults[@]}" | tac | fzf -1)
+    elif [[ -z "$VAULT_ADDR" ]]; then
+        export VAULT_ADDR="$default_vault"
+    fi
+
+    if [[ $all -eq 1 ]]; then
+        local vault_addr
+        for vault_addr in "${vaults[@]}"; do
+            VAULT_ADDR="$vault_addr" _vault_login "$force" "$renew"
+        done
+    else
+        _vault_login "$force" "$renew"
+    fi
+
+    if [[ $settoken -eq 1 ]]; then
+        VAULT_TOKEN="$(vault token lookup --format json | jq -r '.data.id')"
+        export VAULT_TOKEN
+    fi
+    vault-token-helper list -e
+}
+
+# stdout is noise, stderr is why the login failed — keep the latter.
+login_az() {
+    az login >/dev/null || { echo "az login failed."; return 1; }
+}
+login_aws() {
+    aws sso login >/dev/null || { echo "aws sso login failed."; return 1; }
+}
+login_gcp() {
+    gcloud auth login --brief --update-adc >/dev/null || { echo "gcloud auth login failed."; return 1; }
+}
+login_all() {
+    login_aws && login_gcp
+    login_vault -ra
+}
+
+## -----   Kube   -----
+# Usage: kube-gk
+# List generic-kube version per namespace
+kube-gk() {
+    local context=$(kubectl config get-contexts -o name| fzf -1 -e --prompt="Select kubernetes context: ")
+    [[ -z $context ]] && return 1
+    kubectl --context=$context get svc -A -o json | jq -r '.items[] | [(.metadata.labels["helm.sh/chart"] // "null"), .metadata.namespace, .metadata.name] | @tsv' | grep generic-kube | sort -k1,1 -V | column -t
+}
+
+## -----   Vault   -----
+# Usage: vault_copy <src-kv-path> <dst-kv-path>
+vault_copy() {
+    local source=$1 dest=$2
+    [[ -z "$source" || -z "$dest" ]] && { echo "Usage: vault_copy <src-kv-path> <dst-kv-path>"; return 1; }
+    local data
+    data=$(vault kv get -format=json "$source" | jq -r '.data.data') || return 1
+    # Refuse to write jq's "null" over the destination when the source is empty.
+    [[ -z "$data" || "$data" == "null" ]] && { echo "No data at $source — nothing copied."; return 1; }
+    print -r -- "$data" | vault kv put "$dest" -
+}

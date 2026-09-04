@@ -1,0 +1,17 @@
+export ANSIBLE_CONFIG='~/ansible.cfg'
+export AWS_PROFILE={{ .org.awsProfile }}
+export CLOUDSDK_PYTHON_SITEPACKAGES=1
+#export CLOUDSDK_HOME=$HOME/.local/share/mise/installs/gcloud/latest
+export EDITOR='/usr/bin/vim'
+export FZF_CTRL_R_OPTS="--no-height"
+{{ if .org.gcpQuotaProject }}export GOOGLE_CLOUD_QUOTA_PROJECT={{ .org.gcpQuotaProject }}
+{{ end }}export PAGER=""
+export PYTHONWARNINGS="ignore:Unverified HTTPS request"
+export TG_PARALLELISM=16
+export TG_PROVIDER_CACHE=1
+export TG_PROVIDER_CACHE_DIR=~/.cache/terragrunt/providers
+export VAULT_LOGIN_WITH_BROWSER=false
+export TAPLO_CONFIG=$HOME/.config/taplo/.taplo.toml
+
+# Machine-local, never versioned: tokens and per-machine overrides.
+[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"

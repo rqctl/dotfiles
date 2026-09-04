@@ -1,0 +1,16 @@
+# Generic defaults so the repo carries no employer-identifying data.
+# Real values go in .chezmoidata/99-local.yaml, which is git-ignored and sorts
+# after this file, so every key below is overridden when it is present.
+# See docs/99-local.yaml.example.
+org:
+  gitlabHost: gitlab.example.com
+  vpnOrg: ""
+  awsProfile: default
+  gcpQuotaProject: ""
+  gcpProjectFilter: ""
+  ghorgOrgs: ""
+  debugImage: busybox:latest
+  vault:
+    addrs: []
+    authPath: oidc
+    authRole: default

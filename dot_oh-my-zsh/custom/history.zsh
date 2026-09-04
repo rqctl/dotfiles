@@ -1,0 +1,12 @@
+HISTFILE=~/.zsh_history
+HISTSIZE=9000000
+SAVEHIST=$HISTSIZE
+setopt appendhistory
+setopt share_history
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_IGNORE_DUPS
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_FIND_NO_DUPS
+setopt HIST_SAVE_NO_DUPS
+setopt HIST_REDUCE_BLANKS

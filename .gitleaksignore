@@ -1,0 +1,13 @@
+# All false positives. Fingerprints are path:rule:line, so re-verify these if the
+# files move or shift lines.
+#
+# ghorg ships an example token in comment lines; it base64-decodes to
+# "leave a comment on issue 66".
+private_dot_config/ghorg/conf.yaml.tmpl:generic-api-key:219
+private_dot_config/ghorg/conf.yaml.tmpl:generic-api-key:253
+private_dot_config/ghorg/conf.yaml.tmpl:generic-api-key:282
+private_dot_config/ghorg/conf.yaml.tmpl:generic-api-key:321
+private_dot_config/ghorg/conf.yaml.tmpl:generic-api-key:333
+private_dot_config/ghorg/conf.yaml.tmpl:generic-api-key:341
+# VS Code keybinding chord line (the literal word triggers the generic rule).
+private_dot_config/private_Code/User/keybindings.json:generic-api-key:9

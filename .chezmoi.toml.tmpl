@@ -1,0 +1,22 @@
+{{- $isWork      := promptBoolOnce   . "isWork" "Is this a work machine" true -}}
+{{- $repoRoot    := promptStringOnce . "repoRoot" "Root dir for GitLab clones" (joinPath .chezmoi.homeDir "gitlab") -}}
+{{- $workName    := promptStringOnce . "gitWorkName" "Work git name" -}}
+{{- $workEmail   := promptStringOnce . "gitWorkEmail" "Work git email" -}}
+{{- $workKey     := promptStringOnce . "gitWorkSigningKey" "Work GPG signing key id" -}}
+{{- $persName    := promptStringOnce . "gitPersonalName" "Personal (GitHub) git name" -}}
+{{- $persEmail   := promptStringOnce . "gitPersonalEmail" "Personal (GitHub) git email" -}}
+
+# The login umask is 002; without this chezmoi would write group-writable targets.
+umask = 0o022
+
+# /tmp is tmpfs here; chezmoi edit hardlinks into tempDir and fails cross-device.
+tempDir = {{ (joinPath .chezmoi.homeDir ".cache" "chezmoi" "tmp") | quote }}
+
+[data]
+    isWork            = {{ $isWork }}
+    repoRoot          = {{ $repoRoot | quote }}
+    gitWorkName       = {{ $workName | quote }}
+    gitWorkEmail      = {{ $workEmail | quote }}
+    gitWorkSigningKey = {{ $workKey | quote }}
+    gitPersonalName   = {{ $persName | quote }}
+    gitPersonalEmail  = {{ $persEmail | quote }}

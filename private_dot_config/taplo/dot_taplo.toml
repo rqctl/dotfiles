@@ -1,0 +1,12 @@
+# Taplo configuration for TOML formatting
+# https://taplo.tamasfe.dev/configuration/formatter-options.html
+
+[formatting]
+align_entries         = true  # Align entries across equal signs within each section
+array_auto_collapse   = false
+column_width          = 120   # Maximum line width before wrapping
+compact_inline_tables = false
+indent_tables         = true
+reorder_arrays        = true  # Reorder array items alphabetically
+reorder_inline_tables = true
+reorder_keys          = true  # Reorder keys alphabetically

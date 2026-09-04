@@ -1,0 +1,71 @@
+# ----- NAVIGATION -----
+
+# Usage: ... | _fzf_tree <base> — picker whose preview trees <base>/<selection>.
+# Ctrl-E cycles the preview window.
+_fzf_tree() {
+    local base="$1"
+    fzf -e -1 --bind 'ctrl-e:change-preview-window(hidden|50%)' \
+        --preview "tree1 $base/{} | sed s@$base/@@"
+}
+
+
+# Usage: cdif — fzf-pick a directory inside infra-core; infra-core itself is
+# always the first entry, selecting it lands you at the repo root.
+cdif() {
+    local start_dir="{{ .repoRoot }}/idp/resource-plane/infra-core"
+    local base=$(dirname $start_dir)
+    local choice="$base$(tree -dif $start_dir --noreport | sed "s@$base@@"| _fzf_tree $base)"
+    [[ $choice == $base ]] && return 1 || cd $choice
+    tree1
+}
+
+
+# Usage: cdg — fzf-pick any repo or worktree under ~/gitlab, most recent first.
+cdg() {
+    local start="{{ .repoRoot }}" choice
+    # --exec-batch keeps this to a single ls, so the sort is global instead of
+    # per xargs batch. -t is mtime, which git touches on fetch and commit;
+    # atime barely moves under relatime. -t f also catches a worktree's .git file.
+    choice=$(fd -t d -t f -H --prune '^\.git$' "$start" --exec-batch ls -dt \
+        | sed -E "s@^$start/@@; s@/\.git/?\$@@" \
+        | _fzf_tree "$start")
+    [[ -z "$choice" ]] && return 1
+    cd "$start/$choice" || return 1
+    # Background fetch: freshness without paying for a pull on every cd.
+    git fetch -pq &!
+    tree1
+}
+
+
+# Usage: cdv — fzf-pick the developer-control-plane repo or an argocd values sibling.
+cdv() {
+    local base="{{ .repoRoot }}/idp" choice
+    local root="$base/developer-control-plane"
+    # (N/) so a missing argocd-gcp-values* does not abort with "no matches found".
+    local -a dirs=("$root" "$root"/argocd-gcp-values*(N/))
+    choice=$(printf '%s\n' "${dirs[@]}" | sed "s@^$base/@@" | sort | _fzf_tree "$base")
+    [[ -z "$choice" ]] && return 1
+    cd "$base/$choice" || return 1
+    git fetch -pq &!
+    tree1
+}
+
+
+# Usage: ghorgca — clone every org in parallel, then report the failures.
+ghorgca() {
+    local -a orgs=({{ .org.ghorgOrgs }}) pids=() failed=()
+    local org i
+    for org in $orgs; do
+        ghorg clone "$org" &
+        # Quoted: in an unquoted array assignment zsh takes $! literally.
+        pids+=("$!")
+    done
+    for i in {1..$#orgs}; do
+        wait $pids[i] || failed+=("$orgs[i]")
+    done
+    if (( ${#failed} )); then
+        echo "ghorgca: failed for ${failed[*]}" >&2
+        return 1
+    fi
+    echo "ghorgca: ${#orgs} orgs cloned."
+}
