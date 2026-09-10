@@ -14,6 +14,7 @@ alias td='mise run terradrift'
 alias mr='mise run'
 alias k9S='k9s'
 alias cm='chezmoi'
+alias sk='sofka'
 
 ## ----- Cleaning -----
 
@@ -37,7 +38,52 @@ vi() {
 
 ## -----  System Upgrade  -----
 
-# TODO/clean code and output
+# Section header used by upgrade's steps below.
+_upgrade_step() {
+    print -P "\n%F{cyan}==> $1%f"
+}
+
+_upgrade_apt() {
+    _upgrade_step "APT: upgrade"
+    apt update
+    command apt list --upgradable 2>/dev/null
+    apt upgrade -y
+
+    _upgrade_step "APT: clean"
+    apt autoremove -y
+    apt-get clean
+}
+
+_upgrade_mise() {
+    _upgrade_step "MISE: upgrade"
+    mise self-update
+    # GITLAB_TOKEN prevent glab cli upgrade
+    env -u GITLAB_TOKEN mise up --bump -i
+
+    # mise up installs new versions but leaves this shell's PATH on the old
+    # install dirs, so everything below would run the pre-upgrade binaries.
+    eval "$(mise hook-env -f -s zsh)"
+    mise prune -y
+}
+
+_upgrade_omz() {
+    _upgrade_step "OMZ: upgrade"
+    omz update
+}
+
+_upgrade_gcloud() {
+    _upgrade_step "GCLOUD: python packages"
+    local gcloud_python
+    gcloud_python=$(gcloud info --format="value(basic.python_location)")
+    if [[ -x "$gcloud_python" ]]; then
+        "$gcloud_python" -m pip install --upgrade pip numpy
+    else
+        print -P "%F{yellow}Skipped: gcloud reported no usable python (got '${gcloud_python:-nothing}').%f"
+    fi
+
+    _upgrade_step "GCLOUD: components"
+    gcloud components update
+}
 
 # Usage: upgrade
 # — apt, mise, omz, gcloud, in that order.
@@ -46,47 +92,19 @@ upgrade() {
     # -n never prompts, so a broken sudo fails here rather than ten minutes in.
     # `sudo -v` would prompt even with NOPASSWD: it validates the user, and the
     # plain "(ALL : ALL) ALL" rule wants a password.
-    sudo -n true 2>/dev/null || { echo "sudo needs a password — check your NOPASSWD rule."; return 1; }
+    sudo -n true 2>/dev/null || { print -P "%F{red}sudo needs a password — check your NOPASSWD rule.%f"; return 1; }
 
-    echo -e "\n### Reset working dir\n"
     cd || return 1
 
-    echo -e "\n### APT upgrade tasks\n"
-    apt update
-    command apt list --upgradable 2>/dev/null
-    apt upgrade -y
-
-    echo -e "\n### APT cleaning tasks\n"
-    apt autoremove -y
-    apt-get clean
-
-
-    echo -e "\n### MISE upgrade\n"
-    mise self-update
-    # GITLAB_TOKEN prevent glab cli upgrade
-    env -u GITLAB_TOKEN mise up --bump -i
-
-    # mise up installs new versions but leaves this shell's PATH on the old
-    # install dirs, so everything below would run the pre-upgrade binaries.
-    eval "$(mise hook-env -f -s zsh)"
-
-    echo -e "\n### OMZ upgrade\n"
-    omz update
-
-    echo -e "\n### GCLOUD install python packages\n"
-    local gcloud_python
-    gcloud_python=$(gcloud info --format="value(basic.python_location)")
-    if [[ -x "$gcloud_python" ]]; then
-        "$gcloud_python" -m pip install --upgrade pip numpy
-    else
-        echo "Skipped: gcloud reported no usable python (got '${gcloud_python:-nothing}')."
-    fi
-
-    echo -e "\n### GCLOUD components upgrade\n"
-    gcloud components update
+    _upgrade_apt
+    _upgrade_mise
+    _upgrade_omz
+    _upgrade_gcloud
 
     source "$HOME/.zshrc.custom"
     cd "$orig_dir"
+
+    print -P "\n%F{green}==> Upgrade complete%f"
 }
 
 
