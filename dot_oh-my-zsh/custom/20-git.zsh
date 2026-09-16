@@ -1,6 +1,7 @@
 # ----- GIT -----
 
 alias gd='git diff'
+alias gdr='gitdrift'
 alias lg='lazygit'
 alias gpfnoci='git push --force-with-lease --force-if-includes -o ci.skip'
 alias gpwd='git rev-parse --show-toplevel 2>/dev/null || echo .'
