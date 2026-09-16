@@ -10,6 +10,13 @@ namespace = "all"
 filter = "status==Pending"
 sort = "AGE:desc"
 
+[[bookmarks]]
+name = "No Cronjobs"
+resource = "pods"
+namespace = "all"
+filter = "-l app.kubernetes.io/component!=cronjob"
+sort = "AGE:asc"
+
 [[views."v1/nodes".columns]]
 name = "TYPE"
 path = "/metadata/labels/beta.kubernetes.io~1instance-type"
