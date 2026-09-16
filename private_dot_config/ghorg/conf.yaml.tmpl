@@ -82,7 +82,7 @@ GHORG_PRUNE_UNTOUCHED: false
 GHORG_PRUNE_UNTOUCHED_NO_CONFIRM: false
 
 # Color output (enabled, disabled)
-# flag (--color) eg: --color=disabled
+# flag( --color) eg: --color=enabled eg: --color=disabled
 GHORG_COLOR: enabled
 
 # Skip archived repos, currently github/gitlab/gitea only
@@ -99,7 +99,7 @@ GHORG_BACKUP: false
 
 # Max goroutines created while cloning
 # flag (--concurrency) eg: --concurrency=1
-GHORG_CONCURRENCY: 10
+GHORG_CONCURRENCY: 25
 
 # Delay in seconds between cloning repos. Useful for rate limiting
 # flag (--clone-delay-seconds) eg: --clone-delay-seconds=5
@@ -115,6 +115,15 @@ GHORG_CLONE_DEPTH:
 # This allows you to only clone a specific list of repos
 # flag (--target-repos-path)
 GHORG_TARGET_REPOS_PATH:
+
+# Path to an executable that can filter or modify the list of repos before cloning
+# ghorg writes the repo list as a JSON array to the executable's stdin and reads
+# the JSON array the executable writes to stdout, then continues with that list
+# Runs after all built-in filters (match regex, prefixes, target repos, ghorgonly, ghorgignore)
+# The executable may remove repos and may also modify repo fields such as clone_branch
+# If the executable exits non-zero or writes invalid JSON the run is aborted
+# flag (--repo-filter-hook) eg: --repo-filter-hook=/path/to/filter.sh
+GHORG_REPO_FILTER_HOOK:
 
 # A comma separated list of topics to filter by, currently github/gitlab/gitea only
 # flag (--topics) eg: --topics=frontend
@@ -137,17 +146,75 @@ GHORG_MATCH_REGEX:
 # flag (--exclude-match-regex) eg: --exclude-match-regex=^foo
 GHORG_EXCLUDE_MATCH_REGEX:
 
-# Only clones new repos and does not perform a git clean on existing repos. Useful if you don't want to lose changes made to repos in the org/user directory.
+# Only clones new repos and does not perform git checkout, clean, reset, or pull on existing repos.
+# Existing repos will only have their remote URL updated (and optionally fetch if --fetch-all is set).
+#
+# Use cases:
+#   --no-clean                   Existing repos left completely untouched (only remote URL updated)
+#   --no-clean --fetch-all       Fetch-only mode: fetches all remote branches without modifying working directory
+#
+# Compare to --protect-local:
+#   --no-clean skips ALL existing repos regardless of their state
+#   --protect-local only skips repos that have uncommitted changes or unpushed commits
+#
 # flag (--no-clean)
 GHORG_NO_CLEAN: false
+
+# Skip updating repositories that have local changes (uncommitted changes or unpushed commits).
+# Clean repos (no local modifications) will still be updated normally.
+#
+# Additionally, if you are on a branch other than the default branch, ghorg will restore
+# your original branch after pulling the default branch. This protects your working context.
+#
+# What --protect-local protects:
+#   - Uncommitted changes: repos with dirty working directory are skipped
+#   - Unpushed commits: repos with commits ahead of remote are skipped
+#   - Current branch: restores your original branch after pulling default branch
+#
+# Use cases:
+#   --protect-local              Safe re-clone: updates clean repos, skips dirty ones, restores branches
+#   --protect-local --dry-run    Preview which repos would be skipped due to local changes
+#
+# Compare to --no-clean:
+#   --no-clean skips ALL existing repos regardless of their state
+#   --protect-local only skips repos that have local changes, and restores your branch checkout
+#
+# flag (--protect-local)
+GHORG_PROTECT_LOCAL: true
 
 # Additionally clone the wiki page for repo
 # flag (--clone-wiki)
 GHORG_CLONE_WIKI: false
 
-# Fetches all remote branches for each repo by running a git fetch --all
+# Fetches all remote branches for each repo by running git fetch --all.
+# This updates remote-tracking branches without modifying your working directory or current branch.
+#
+# Use cases:
+#   --fetch-all                  Get all branch updates (combined with normal pull workflow)
+#   --no-clean --fetch-all       Fetch-only mode: fetch without checkout/clean/reset/pull
+#   --fetch-all --fetch-prune    Fetch all and remove stale remote-tracking branches
+#
 # flag (--fetch-all)
 GHORG_FETCH_ALL: true
+
+# Fetches Git LFS (large file storage) content for each repo by running git lfs fetch --all.
+# Useful for backing up repositories that use Git LFS. Requires git-lfs to be installed.
+#
+# flag (--fetch-git-lfs)
+GHORG_FETCH_GIT_LFS: false
+
+# Remove stale remote-tracking branches during fetch by adding --prune to git fetch.
+# Only applies when --fetch-all is used. Removes local references to branches that no longer exist on remote.
+#
+# IMPORTANT: This is different from --prune!
+#   --fetch-prune    Removes stale REMOTE-TRACKING branches (git refs like origin/deleted-branch)
+#   --prune          Removes LOCAL CLONE DIRECTORIES for repos that no longer exist on remote
+#
+# Use cases:
+#   --fetch-all --fetch-prune    Fetch all branches and clean up stale remote-tracking refs
+#
+# flag (--fetch-prune)
+GHORG_FETCH_PRUNE: true
 
 # If you want to set a path other than $HOME/.config/ghorg/ghorgignore for your ghorgignore
 # flag (--ghorgignore-path)
@@ -185,6 +252,15 @@ GHORG_EXIT_CODE_ON_CLONE_ISSUES: 1
 # flag (--no-token)
 GHORG_NO_TOKEN: false
 
+# Source your token from a command instead of storing it in cleartext.
+# The command is run through your shell (sh -c on unix, cmd /C on windows) and its
+# stdout (trimmed of surrounding whitespace) is used as the token for the active
+# GHORG_SCM_TYPE. Useful with external secrets managers (e.g. mise, pass, a keyring CLI).
+# An explicitly set token (GHORG_<SCM>_TOKEN, --token, etc.) always takes precedence,
+# so the command only runs when no token is already set.
+# e.g. GHORG_TOKEN_CMD: mise get GITLAB_TOKEN
+GHORG_TOKEN_CMD:
+
 # Skips the calculation of the output directory size at the end of a clone operation.
 # This can save time, especially when cloning a large number of repositories.
 # This is enabled by default
@@ -197,6 +273,20 @@ GHORG_NO_DIR_SIZE: false
 # More information at https://github.com/gabrie30/ghorg?tab=readme-ov-file#tracking-clone-data-over-time
 # flag (--stats-enabled)
 GHORG_STATS_ENABLED: false
+
+# Enables pprof profiling of the clone command
+# Writes a CPU profile (ghorg-cpu.pprof), a heap profile (ghorg-heap.pprof), a goroutine profile (ghorg-goroutine.pprof), a block profile (ghorg-block.pprof) and a mutex profile (ghorg-mutex.pprof) to the directory the command is run from
+# The heap, goroutine, block and mutex profiles are snapshots taken when the clone finishes
+# Profiles can be analyzed with e.g. go tool pprof ghorg-cpu.pprof
+# flag (--pprof)
+GHORG_PPROF: false
+
+# Enables runtime execution tracing of the clone command
+# Writes a trace (ghorg-trace.out) to the directory the command is run from
+# The trace can be analyzed with go tool trace ghorg-trace.out
+# NOTE: trace files can get large on big clones
+# flag (--trace)
+GHORG_TRACE: false
 
 # Specifies the location of your ghorg conf.yaml, allowing you to have many configuration files, or none at all
 # default: ghorg looks in $HOME/.config/ghorg/conf.yaml, if not set in that location nor as a commandline flag, ghorg will use all default values
@@ -240,10 +330,22 @@ GHORG_GITHUB_APP_ID:
 # Can be one of: all, owner, member (default: owner)
 GHORG_GITHUB_USER_OPTION:
 
+# Clone all of a user's gists into clone-dir/ghorg-gists
+# Only available when using GHORG_SCM_TYPE: github and GHORG_CLONE_TYPE: user
+# flag (--github-user-gists)
+GHORG_GITHUB_USER_GISTS: false
+
 # Filter repos by a language
 # Can be a comma separated value with no spaces
 # falg (--github-filter-language) e.g.: --github-filter-language=go,ruby,elixir
 GHORG_GITHUB_FILTER_LANGUAGE:
+
+# Optional: max concurrent GitHub REST requests while listing org/user repos (pagination only).
+# If unset or empty, ghorg lists all pages in parallel (fastest; very large orgs may hit GitHub secondary rate limits).
+# Set to a number (e.g. 8 or 1) to throttle listing when you see rate-limit errors.
+# This is NOT GHORG_CONCURRENCY: that setting only controls parallel git clones after the repo list is built.
+# flag (--github-repo-list-concurrency)
+GHORG_GITHUB_REPO_LIST_CONCURRENCY:
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |G|I|T|L|A|B| |S|P|E|C|I|F|I|C|
@@ -267,7 +369,12 @@ GHORG_GITLAB_GROUP_MATCH_REGEX:
 
 # Exclude gitlab groups by regex
 # flag (--gitlab-group-exclude-match-regex)
-GHORG_GITLAB_GROUP_EXCLUDE_MATCH_REGEX:
+GHORG_GITLAB_GROUP_EXCLUDE_MATCH_REGEX: workflow-automation-n8n
+
+# Include projects shared with the group, not just those owned by it
+# set to false to skip projects that are only shared with the group
+# flag (--gitlab-include-shared-projects)
+GHORG_GITLAB_INCLUDE_SHARED_PROJECTS: true
 
 # Additionally clone all snippets
 # flag (--clone-snippets)
@@ -285,6 +392,23 @@ GHORG_GITEA_TOKEN:
 # Must be present if your gitea instance uses http
 # flag (--insecure-gitea-client)
 GHORG_INSECURE_GITEA_CLIENT: false
+
+# +-+-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+-+
+# |C|O|D|E|B|E|R|G| |S|P|E|C|I|F|I|C|
+# +-+-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+-+
+
+# Codeberg (https://codeberg.org) runs Forgejo, which is API-compatible with
+# Gitea, so ghorg reuses its Gitea backend and defaults the base URL to
+# https://codeberg.org (no GHORG_SCM_BASE_URL required).
+
+# Add your Codeberg token
+# Settings -> Applications -> Generate Token (scopes: read:organization, read:repository)
+# flag (--token, -t) eg: --token=XXXXXXX or --token=~/path/to/file/containing/token
+GHORG_CODEBERG_TOKEN:
+
+# Must be present if using a self-hosted Forgejo instance served over http
+# flag (--insecure-codeberg-client)
+GHORG_INSECURE_CODEBERG_CLIENT: false
 
 # +-+-+-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+-+
 # |B|I|T|B|U|C|K|E|T| |S|P|E|C|I|F|I|C|
