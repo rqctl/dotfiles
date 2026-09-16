@@ -19,8 +19,19 @@ name = "CIDR"
 path = "/spec/podCIDR"
 
 [[views."v1/pods".columns]]
-name = "VERSION"
+name = "APP_VERSION"
 path = "/metadata/labels/app.kubernetes.io~1version"
+wide = true
+
+[[views."v1/pods".columns]]
+name = "CHART"
+path = "/metadata/labels/helm.sh~1chart"
+wide = true
+
+[[views."v1/pods".columns]]
+name = "VERSION"
+path = "/metadata/labels/gcp.technical~1version"
+wide = true
 
 # ── Crossplane Trace
 [[plugins]]
