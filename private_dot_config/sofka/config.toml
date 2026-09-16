@@ -1,0 +1,55 @@
+favorite_namespaces = ["kube-system", "argocd", "gitlab-runner"]
+
+[skin]
+name = "catppuccin-mocha"
+
+[[bookmarks]]
+name = "Pending"
+resource = "pods"
+namespace = "all"
+filter = "status==Pending"
+sort = "AGE:desc"
+
+[[views."v1/nodes".columns]]
+name = "TYPE"
+path = "/metadata/labels/beta.kubernetes.io~1instance-type"
+
+[[views."v1/nodes".columns]]
+name = "CIDR"
+path = "/spec/podCIDR"
+
+[[views."v1/pods".columns]]
+name = "VERSION"
+path = "/metadata/labels/app.kubernetes.io~1version"
+
+# ── Crossplane Trace
+[[plugins]]
+key = "ctrl-w"
+name = "crossplane-trace"
+palette = "crossplane-trace"
+command = "bash"
+args = [
+  "-c",
+  "NS=\"$NAMESPACE\"; if [ \"$NS\" = \"-\" ] || [ -z \"$NS\" ]; then viddy --disable_auto_save -- crossplane resource trace --show-connection-secrets -c \"$CONTEXT\" \"$RESOURCE.$GROUP\" \"$NAME\" -o wide; else viddy --disable_auto_save -- crossplane resource trace --show-connection-secrets -c \"$CONTEXT\" -n \"$NS\" \"$RESOURCE.$GROUP\" \"$NAME\" -o wide; fi",
+]
+output = "terminal"
+requires = ["viddy", "crossplane"]
+install = "Install viddy: brew install viddy; Install crossplane CLI: https://docs.crossplane.io/latest/cli/"
+
+# ── Remove Finalizers
+[[plugins]]
+name = "remove-finalizers"
+palette = "remove-finalizers"
+command = "kubectl"
+args = [
+  "patch",
+  "--context", "$CONTEXT",
+  "--namespace", "$NAMESPACE",
+  "$RESOURCE.$GROUP",
+  "$NAME",
+  "-p", "{\"metadata\":{\"finalizers\":null}}",
+  "--type", "merge",
+]
+output = "background"
+confirm = true
+dangerous = true
