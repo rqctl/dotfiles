@@ -12,7 +12,24 @@ alias gamendnoci='git add $(gpwd) && git commit --amend --no-edit && git push --
 alias gps='git pull --autostash'
 alias gotoc='open $(echo $(git remote get-url origin | sed -E "s#^(git@([^:]+):|https://([^/]+)/)#https://\2\3/#; s/\.git$//")/-/commit/$(git rev-parse @{u})) &>/dev/null &'
 alias gdiff='(git --no-pager diff --name-only --diff-filter=d --merge-base $(_git_default_branch) -- ; git ls-files --full-name --others --exclude-standard :/) | sort -fu'
-alias gdiffhuman='(git --no-pager diff --name-status --merge-base $(_git_default_branch) -- ; git ls-files --full-name --others --exclude-standard :/ | sed "s/^/??  /") | sort -fu | column -t'
+
+# Colors by git status: A/?? green, D/U red, everything else (M, R, C, T...) yellow.
+gdiffhuman() {
+    (git --no-pager diff --name-status --merge-base $(_git_default_branch) --
+     git ls-files --full-name --others --exclude-standard :/ | sed 's/^/??  /') \
+        | sort -fu \
+        | awk '
+            {
+                code = $1
+                sub(/[0-9]+$/, "", code)
+                if (code == "A" || code == "??") color = 32
+                else if (code == "D" || code == "U") color = 31
+                else color = 33
+                printf "\033[%dm%-6s\033[0m", color, $1
+                for (i = 2; i <= NF; i++) printf "  %s", $i
+                print ""
+            }'
+}
 
 
 # Echoes "<remote>/<branch>", cheapest source first; the network lookup is cached.
