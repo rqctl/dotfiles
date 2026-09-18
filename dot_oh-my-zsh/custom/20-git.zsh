@@ -128,9 +128,9 @@ _glab_mr_create() {
     local -a label_args
     [[ -n "$category" ]] && label_args=(--label "sre-review::${category}")
     if [[ -f "$repo_root/.gitlab/merge_request_templates/Default.md" ]]; then
-        glab mr create --title "$(git log -1 --pretty=%s)" --template Default "${label_args[@]}" --draft --yes
+        glab mr create -a @me --title "$(git log -1 --pretty=%s)" --template Default "${label_args[@]}" --draft --yes
     else
-        glab mr create --fill "${label_args[@]}" --draft --yes
+        glab mr create -a @me --fill "${label_args[@]}" --draft --yes
     fi
 }
 
