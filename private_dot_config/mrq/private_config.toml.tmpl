@@ -1,0 +1,28 @@
+[gitlab]
+url = "https://{{ .org.gitlabHost }}"
+# token = "glpat-..."  # or use token_command, $MRQ_GITLAB_TOKEN, $GITLAB_TOKEN
+
+[[filter]]
+name = "Queue"
+has_reviewer = false
+scope = "instance"
+labels = ["sre-review::ask"]
+
+[[filter]]
+name = "In Review"
+has_reviewer = true
+scope = "instance"
+labels = ["sre-review::ask"]
+
+[[filter]]
+name = "Mine"
+scope = "authored"
+state = "opened"
+
+[[filter]]
+name = "Assigned to me"
+scope = "assigned"
+state = "opened"
+
+[notifications]
+command = "notify-send -a MRQ {title} {body}"
