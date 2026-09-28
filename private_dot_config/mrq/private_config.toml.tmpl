@@ -160,6 +160,39 @@ name = "Assigned to me"
 scope = "assigned"
 state = "opened"
 
+[[filter]]
+name = "🟢 Merged ship"
+scope = "instance"
+state = "merged"
+labels = ["sre-review::ship"]
+updated_after_days = 30
+max_results = 100
+
+[[filter]]
+name = "🟠 Merged show"
+scope = "instance"
+state = "merged"
+labels = ["sre-review::show"]
+updated_after_days = 30
+max_results = 100
+
+[[filter]]
+name = "🔴 Merged ask"
+scope = "instance"
+state = "merged"
+labels = ["sre-review::ask"]
+updated_after_days = 30
+max_results = 100
+
+[[filter]]
+name = "Merged"
+scope = "project"
+path = "idp/resource-plane/infra-core"
+state = "merged"
+not_labels = ["sre-review::ship", "sre-review::show", "sre-review::ask"]
+updated_after_days = 30
+max_results = 100
+
 # [[filter]]
 # name = "Reviewing"
 # scope = "review_requested"
