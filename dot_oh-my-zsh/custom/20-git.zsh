@@ -72,10 +72,10 @@ _branch_exists() {
         || git ls-remote --exit-code --heads origin "$branch" &>/dev/null
 }
 
-# Usage: _commit_push_mr <branch> <commit> <category>
+# Usage: _commit_push_mr <branch> <commit_msg> <commit_body> <category>
 _commit_push_mr() {
-    local branch=$1 commit_msg="$2" category=$3
-    git add . && git commit -m "$commit_msg" && git push -u origin "$branch" && _glab_mr_create "$category"
+    local branch=$1 commit_msg="$2" commit_body="$3" category=$4
+    git add . && git commit -m "$commit_msg" ${commit_body:+-m "$commit_body"} && git push -u origin "$branch" && _glab_mr_create "$category"
 }
 
 # Usage: pcr — run the prek hooks on everything that differs from the default branch.
@@ -156,10 +156,10 @@ gmr2() {
     git push -u origin "$(git branch --show-current)" && _glab_mr_create "$1"
 }
 
-# Usage: gmr <branch> <commit_msg> [ship|show|ask] — branch, prek, commit in $EDITOR, draft MR.
+# Usage: gmr <branch> <commit_msg> [commit_body] [ship|show|ask] — branch, prek, commit in $EDITOR, draft MR.
 gmr() {
-    local branch="$1" commit_msg="$2" category="$3"
-    [[ -z "$branch" ]] && { echo "Usage: gmr <branch> <commit_msg> [ship|show|ask]"; return 1; }
+    local branch="$1" commit_msg="$2" commit_body="$3" category="$4"
+    [[ -z "$branch" ]] && { echo "Usage: gmr <branch> <commit_msg> [commit_body] [ship|show|ask]"; return 1; }
 
     ( cd "$(gpwd)" || return 1
       if _branch_exists "$branch"; then
@@ -174,7 +174,7 @@ gmr() {
           echo "prek hooks failed — aborting before commit (still on branch '$branch')."
           return 1
       }
-      _commit_push_mr "$branch" "$commit_msg" "$category" )
+      _commit_push_mr "$branch" "$commit_msg" "$commit_body" "$category" )
 }
 
 # Usage: gsbranch — fzf-pick a local branch, check it out and fetch.
