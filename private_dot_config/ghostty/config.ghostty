@@ -4,7 +4,7 @@ font-family = Ubuntu Sans Mono
 font-size = 9.5
 window-theme = dark
 
-bell-features = no-title
+bell-features = no-title,no-attention
 window-padding-color = extend
 
 scrollback-limit = 100000000
