@@ -1,5 +1,7 @@
 theme = Catppuccin Mocha
-font-size = 10
+adjust-cell-width = -7%
+font-family = Ubuntu Sans Mono
+font-size = 9.5
 window-theme = dark
 
 bell-features = no-title
