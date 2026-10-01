@@ -38,6 +38,7 @@ fi
 APT_PACKAGES=(
     build-essential         # essential compilation tools
     ca-certificates         # SSL certificates
+    ghostty                 # GPU-accelerated terminal emulator
     git                     # version control system
     gnome-shell-extensions  # GNOME desktop extensions
     htop                    # interactive process viewer
@@ -50,7 +51,6 @@ APT_PACKAGES=(
     pigz                    # parallel gzip compression
     shellcheck              # shell script static analysis
     tig                     # text-mode interface for git
-    tilix                   # advanced terminal emulator
     tree                    # recursive directory listing
     vim                     # text editor
     wget                    # network downloader
@@ -192,6 +192,13 @@ if [ ! -f "$HOME/.local/share/fonts/MesloLGS NF Regular.ttf" ]; then
     log "$GREEN" "✅ MesloLGS NF fonts installed."
 fi
 
+# Enable middle-click paste of the primary selection
+if [ "$(gsettings get org.gnome.desktop.interface gtk-enable-primary-paste)" != "true" ]; then
+    log "$BLUE" "\n➔ Enabling middle-click primary paste..."
+    gsettings set org.gnome.desktop.interface gtk-enable-primary-paste true
+    log "$GREEN" "✅ Middle-click primary paste enabled."
+fi
+
 # Block Ubuntu's snap-transition firefox package — written unconditionally so re-runs fix a broken state
 sudo tee /etc/apt/preferences.d/firefox-deb-nosnap > /dev/null << 'EOF'
 Package: firefox*
@@ -230,16 +237,6 @@ if ! command -v warp-cli &>/dev/null; then
     warp-cli registration new {{ .org.vpnOrg }}
     log "$GREEN" "✅ Successfully configured Cloudflare Warp."
 {{ end }}fi
-
-# Fix Tilix desktop file icon
-TILIX_CONFIG_FILE="$HOME/.local/share/applications/com.gexperts.Tilix.desktop"
-if [ ! -f "$TILIX_CONFIG_FILE" ]; then
-    log "$BLUE" "\n➔ Fixing Tilix desktop file icon..."
-    mkdir -p "$HOME/.local/share/applications"
-    cp /usr/share/applications/com.gexperts.Tilix.desktop "$TILIX_CONFIG_FILE"
-    sed -i 's/^Icon=com.gexperts.Tilix/Icon=org.gnome.Ptyxis/' "$TILIX_CONFIG_FILE"
-    log "$GREEN" "✅ Successfully fixed Tilix desktop file icon."
-fi
 
 # Install VS Code
 if ! command -v code &>/dev/null; then
@@ -434,7 +431,6 @@ TODO_ITEMS=(
     ""
     "=== ACTIONS ==="
     "[ ] Enroll fingerprint: fprintd-enroll"
-    "[ ] Configure Tilix to use MesloLGS NF font (fonts are already installed)"
     "[ ] If not restoring p10k configuration, run 'p10k configure' to set up your terminal prompt"
     "[ ] Reboot to activate the DisplayLink driver and handle the Docker group membership change"
     ""
