@@ -10,7 +10,6 @@ hvac
 jinja2
 loguru
 numpy
-pip-upgrader
 pip
 pipx
 pytest

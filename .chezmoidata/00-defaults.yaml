@@ -13,3 +13,7 @@ org:
     addrs: []
     authPath: oidc
     authRole: default
+  claude:
+    marketplace: ""      # Claude Code plugin marketplace, rendered only when set
+    marketplaceUrl: ""
+    plugins: {}          # plugin name -> enabled, from that marketplace

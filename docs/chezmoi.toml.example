@@ -35,3 +35,8 @@ mode = "symlink"
     addrs    = ["https://vault-a.your-company.example", "https://vault-b.your-company.example"]  # last = default instance
     authPath = "oidc"                                 # vault auth mount name
     authRole = "your-vault-role"
+
+[data.org.claude]
+    marketplace    = "your-claude-marketplace"                       # Claude Code plugin marketplace ("" to skip)
+    marketplaceUrl = "git@gitlab.your-company.example:group/marketplace.git"
+    plugins        = { "your-plugin" = true, "another-plugin" = false }

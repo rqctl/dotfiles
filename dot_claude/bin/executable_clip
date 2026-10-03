@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Copy stdin, or the contents of the file given as $1, to the system clipboard.
+# Wayland first (wl-copy), X11 fallback (xclip).
+set -euo pipefail
+
+if [ "$#" -gt 0 ]; then
+  exec < "$1"
+fi
+
+if command -v wl-copy >/dev/null 2>&1; then
+  wl-copy
+elif command -v xclip >/dev/null 2>&1; then
+  xclip -selection clipboard
+else
+  echo "clip: neither wl-copy nor xclip found" >&2
+  exit 1
+fi

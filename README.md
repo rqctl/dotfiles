@@ -20,8 +20,9 @@ Plain files are symlinks into this repo (`mode = "symlink"`), so editing them
 directly, or a tool rewriting them, changes the repo at once. Templates and
 private/executable files stay as copies: edit those through `dot`. A change made
 another way still works on this machine but is not backed up: `chezmoi status`
-shows it as `MM`, and the next apply asks before overwriting it. The usual case is
-VS Code's settings UI, since `settings.json` is a template.
+shows it as `MM`, and the next apply asks before overwriting it. The usual cases are
+VS Code's settings UI and Claude Code's `/model` or `/plugin`: both settings files
+are templates.
 
 `dot -l` types: `symlink` green (edit anywhere), `template` yellow and `copy` cyan
 (edit with `dot`), `link` purple (a link chezmoi makes to a path outside this repo).

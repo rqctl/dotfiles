@@ -1,0 +1,65 @@
+{
+  "preferredNotifChannel": "notifications_disabled",
+  "permissions": {
+    "allow": [
+      "Bash({{ .chezmoi.homeDir }}/.claude/bin/clip:*)",
+      "Bash({{ .chezmoi.homeDir }}/.claude/bin/clip *)"
+    ]
+  },
+  "model": "opus",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/check-comment-runs.py 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+{{- range $name, $enabled := .org.claude.plugins }}
+    "{{ $name }}@{{ $.org.claude.marketplace }}": {{ $enabled }},
+{{- end }}
+    "superpowers@claude-plugins-official": true,
+    "datadog@claude-plugins-official": true,
+    "slack@claude-plugins-official": true,
+    "i-have-adhd@i-have-adhd": true,
+    "rust-analyzer-lsp@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+{{- if .org.claude.marketplace }}
+    "{{ .org.claude.marketplace }}": {
+      "source": {
+        "source": "git",
+        "url": "{{ .org.claude.marketplaceUrl }}"
+      },
+      "autoUpdate": true
+    },
+{{- end }}
+    "i-have-adhd": {
+      "source": {
+        "source": "github",
+        "repo": "ayghri/i-have-adhd"
+      }
+    }
+  },
+  "effortLevel": "medium",
+  "tui": "fullscreen",
+  "theme": "dark",
+  "autoMode": {
+    "soft_deny": [
+      "$defaults",
+      "Pushing code to any remote: git push, git push --force, or any command that publishes commits, branches, or tags to a remote repository",
+      "Mutating any remote system: creating, editing, merging, or closing pull/merge requests; changing remote repository or hosted-service state; running CLIs or APIs (gh, glab, git, curl, etc.) that write to a remote server"
+    ]
+  }
+}

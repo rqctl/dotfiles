@@ -42,28 +42,98 @@ fi
 
 # List of apt packages to install
 APT_PACKAGES=(
+    bd                      # jump back to a parent directory
     build-essential         # essential compilation tools
     ca-certificates         # SSL certificates
+    dconf-editor            # GNOME settings browser
+    filezilla               # FTP/SFTP client
     ghostty                 # GPU-accelerated terminal emulator
     git                     # version control system
     gnome-shell-extensions  # GNOME desktop extensions
+    gnome-video-trimmer     # trim videos without re-encoding
     htop                    # interactive process viewer
+    iftop                   # bandwidth usage per connection
+    inotify-tools           # watch files for changes
     ksnip
+    lftp                    # scriptable FTP/SFTP client
     libffi-dev              # shared library for language bindings
     libyaml-dev             # YAML parser library headers
     locate                  # fast file search utility
+    mtr                     # traceroute + ping
     ncdu                    # NCurses disk usage analyzer
+    net-tools               # ifconfig, netstat, route
+    ngrep                   # grep for network packets
     parallel
     pigz                    # parallel gzip compression
+    read-edid               # monitor EDID information
     shellcheck              # shell script static analysis
+    tcptraceroute           # traceroute over TCP
     tig                     # text-mode interface for git
     tree                    # recursive directory listing
+    tshark                  # Wireshark command line
     vim                     # text editor
     wget                    # network downloader
+    wireshark               # packet analyzer
+    wl-clipboard            # Wayland clipboard (wl-copy, wl-paste)
     xclip                   # clipboard command-line utility
     whois
     zlib1g-dev              # compression library headers
     zsh                     # Z shell
+)
+
+# VS Code extensions (installing one already there is a no-op)
+VSCODE_EXTENSIONS=(
+    anthropic.claude-code
+    chrislajoie.vscode-modelines
+    davidanson.vscode-markdownlint
+    eamodio.gitlens
+    esbenp.prettier-vscode
+    gitlab.gitlab-workflow
+    golang.go
+    hverlin.mise-vscode
+    jinliming2.vscode-go-template
+    karunamurti.tera
+    matheusq94.tfs
+    ms-kubernetes-tools.vscode-kubernetes-tools
+    ms-python.debugpy
+    ms-python.python
+    ms-python.vscode-pylance
+    ms-python.vscode-python-envs
+    oderwat.indent-rainbow
+    pascalreitermann93.vscode-yaml-sort
+    pjmiravalle.terraform-advanced-syntax-highlighting
+    redhat.ansible
+    redhat.vscode-xml
+    redhat.vscode-yaml
+    richie5um2.vscode-sort-json
+    ryu1kn.partial-diff
+    tamasfe.even-better-toml
+    tekumara.typos-vscode
+    tim-koehler.helm-intellisense
+    timonwong.shellcheck
+    xshrim.txt-syntax
+)
+
+# GNOME extensions from extensions.gnome.org
+GNOME_EXTENSIONS=(
+    azwallpaper@azwallpaper.gitlab.com            # wallpaper slideshow
+    steal-my-focus-window@steal-my-focus-window   # focus new windows instead of "is ready"
+    unblank@sun.wxg@gmail.com                     # keep the lock screen from blanking
+)
+
+# GNOME settings: "schema key value" (re-applying is a no-op)
+GSETTINGS=(
+    "org.gnome.desktop.interface gtk-enable-primary-paste true"
+    "org.gnome.desktop.interface color-scheme 'prefer-dark'"
+    "org.gnome.desktop.interface gtk-theme 'Yaru-dark'"
+    "org.gnome.desktop.interface icon-theme 'Yaru-dark'"
+    "org.gnome.desktop.interface clock-show-weekday true"
+    "org.gnome.mutter edge-tiling false"
+    "org.gnome.mutter workspaces-only-on-primary false"
+    "org.gnome.mutter.keybindings toggle-tiled-left []"
+    "org.gnome.mutter.keybindings toggle-tiled-right []"
+    "org.gnome.shell favorite-apps ['firefox.desktop', 'com.mitchellh.ghostty.desktop', 'com.microsoft.VSCode.desktop', 'spotify.desktop', 'slack.desktop']"
+    "org.gnome.shell enabled-extensions ['ding@rastersoft.com', 'ubuntu-dock@ubuntu.com', 'tiling-assistant@ubuntu.com', 'ubuntu-appindicators@ubuntu.com', 'azwallpaper@azwallpaper.gitlab.com', 'steal-my-focus-window@steal-my-focus-window', 'unblank@sun.wxg@gmail.com']"
 )
 
 # Update REQUIRED apt and install packages
@@ -86,8 +156,11 @@ fi
 
 # Update apt and install packages
 log "$BLUE" "➔ Updating apt and installing packages..."
+# Lets members of the wireshark group capture packets without root.
+echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
 sudo apt-get update
 sudo apt-get install -y "${APT_PACKAGES[@]}" spotify-client
+sudo usermod -aG wireshark "$USERNAME"
 log "$GREEN" "✅ Successfully installed apt packages."
 
 # Configure fingerprint authentication via PAM
@@ -111,6 +184,12 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     git clone https://github.com/zsh-users/zsh-history-substring-search "$ZSH_CUSTOM/plugins/zsh-history-substring-search"
     git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
     log "$GREEN" "✅ Successfully installed Oh My Zsh and plugins."
+fi
+
+# Before the dotfiles: the installer rewrites ~/.claude/settings.json, chezmoi's copy must win.
+log "$BLUE" "\n➔ Installing Claude Code..."
+if [ ! -f "$HOME/.local/bin/claude" ]; then
+    curl -fsSL https://claude.ai/install.sh | bash
 fi
 
 # Dotfiles, after oh-my-zsh: its installer refuses to run once ~/.oh-my-zsh exists.
@@ -153,12 +232,26 @@ if [ ! -f "$HOME/.local/share/fonts/MesloLGS NF Regular.ttf" ]; then
     log "$GREEN" "✅ MesloLGS NF fonts installed."
 fi
 
-# Enable middle-click paste of the primary selection
-if [ "$(gsettings get org.gnome.desktop.interface gtk-enable-primary-paste)" != "true" ]; then
-    log "$BLUE" "\n➔ Enabling middle-click primary paste..."
-    gsettings set org.gnome.desktop.interface gtk-enable-primary-paste true
-    log "$GREEN" "✅ Middle-click primary paste enabled."
-fi
+# GNOME extensions; they load at the next login
+log "$BLUE" "\n➔ Installing GNOME extensions..."
+shell_major="$(gnome-shell --version | grep -oE '[0-9]+' | head -1)"
+for uuid in "${GNOME_EXTENSIONS[@]}"; do
+    [ -d "$HOME/.local/share/gnome-shell/extensions/$uuid" ] && continue
+    url="$(curl -fsSL "https://extensions.gnome.org/extension-info/?uuid=$uuid&shell_version=$shell_major" \
+        | grep -oE '"download_url": *"[^"]+"' | sed -E 's/.*"([^"]+)"$/\1/')"
+    zip="$(mktemp --suffix=.zip)"
+    curl -fsSL "https://extensions.gnome.org$url" -o "$zip"
+    gnome-extensions install --force "$zip"
+    rm -f "$zip"
+done
+log "$GREEN" "✅ GNOME extensions installed."
+
+log "$BLUE" "\n➔ Applying GNOME settings..."
+for setting in "${GSETTINGS[@]}"; do
+    read -r schema key value <<< "$setting"
+    gsettings set "$schema" "$key" "$value"
+done
+log "$GREEN" "✅ GNOME settings applied."
 
 # Block Ubuntu's snap-transition firefox package — written unconditionally so re-runs fix a broken state
 sudo tee /etc/apt/preferences.d/firefox-deb-nosnap > /dev/null << 'EOF'
@@ -211,6 +304,16 @@ if ! command -v code &>/dev/null; then
     rm -f "$code_deb"
     log "$GREEN" "✅ Successfully installed VS Code."
 fi
+log "$BLUE" "\n➔ Installing VS Code extensions..."
+has_ext() { code --list-extensions 2>/dev/null | grep -qix "$1"; }
+for ext in "${VSCODE_EXTENSIONS[@]}"; do
+    # `code` can exit 0 without installing (marketplace hiccup): check, retry once.
+    for _ in 1 2; do
+        has_ext "$ext" || code --install-extension "$ext" >/dev/null 2>&1 || true
+    done
+    has_ext "$ext" || log "$YELLOW" "⚠ VS Code extension $ext failed; re-run the script"
+done
+log "$GREEN" "✅ VS Code extensions installed."
 
 # Install Slack
 if [ ! -f /etc/apt/sources.list.d/slack.list ]; then
@@ -320,11 +423,6 @@ EOF
     sudo systemctl is-active --quiet docker && sudo systemctl restart docker || true
 fi
 
-log "$BLUE" "\n➔ Installing Claude Code..."
-if [ ! -f "$HOME/.local/bin/claude" ]; then
-    curl -fsSL https://claude.ai/install.sh | bash
-fi
-
 # Add metadata.google.internal to /etc/hosts if missing
 if ! grep -q "^127.0.0.1 metadata.google.internal" /etc/hosts; then
     log "$BLUE" "\n➔ Adding metadata.google.internal to /etc/hosts..."
@@ -383,7 +481,6 @@ TODO_ITEMS=(
     "[ ] Reboot to activate the DisplayLink driver and handle the Docker group membership change"
     ""
     "=== RESTORE FROM BACKUP (secrets and data — not in the dotfiles repo) ==="
-    "[ ] Restore GNOME Shell extensions from your manual list"
     "[ ] ~/.ssh/ (private keys — remember to chmod 600)"
     "[ ] ~/.gnupg/ (GPG keys for commit signing)"
     "[ ] ~/.kube/config (cluster contexts)"
