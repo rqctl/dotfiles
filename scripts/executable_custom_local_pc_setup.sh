@@ -1,8 +1,7 @@
 #!/bin/bash
-# New-machine bootstrap, step 1 of 2. Run this first, then restore dotfiles with:
-#   chezmoi init --apply git@github.com:rqctl/dotfiles.git
-# This script installs system packages and oh-my-zsh; chezmoi owns the config
-# file contents, so the two must not both write the same file.
+# New-machine bootstrap: system packages, oh-my-zsh, dotfiles, mise tools.
+# Needs ~/.config/chezmoi/chezmoi.toml restored first (see README). Safe to re-run.
+# chezmoi owns the config file contents: never write a managed file from here.
 set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
@@ -23,8 +22,15 @@ log() {
     echo -e "${color}${msg}${NC}"
 }
 
-# Prime sudo credentials once upfront to avoid mid-script password prompts
-sudo -v
+if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
+    echo "Restore ~/.config/chezmoi/chezmoi.toml first (template: docs/chezmoi.toml.example)." >&2
+    exit 1
+fi
+
+# Prime sudo credentials once upfront to avoid mid-script password prompts.
+# Not `sudo -v`: it asks for a password while any matching rule needs one (the
+# sudo group does), even after the NOPASSWD file below exists.
+sudo true
 
 # Configure passwordless sudo for the current user
 if [ ! -f "/etc/sudoers.d/$USERNAME" ]; then
@@ -58,71 +64,6 @@ APT_PACKAGES=(
     whois
     zlib1g-dev              # compression library headers
     zsh                     # Z shell
-)
-
-# Define global packages to install with mise
-MISE_GLOBAL_PACKAGES=(
-    argo-rollouts     # progressive delivery controller for Kubernetes
-    argocd            # GitOps continuous delivery for Kubernetes
-    aws               # AWS CLI
-    bat               # cat clone with syntax highlighting and line numbers
-    chezmoi           # dotfile manager
-    cocogitto         # Conventional Commits toolchain and changelog generator
-    crossplane-cli    # Crossplane control plane CLI
-    direnv            # per-directory environment variable loader
-    dyff              # diff tool for YAML and JSON
-    fd                # fast and user-friendly find alternative
-    fzf               # general-purpose fuzzy finder
-    gcloud            # Google Cloud SDK
-    ghorg             # bulk clone GitHub organization repositories
-    glab              # GitLab CLI
-    go                # Go programming language toolchain
-    helm              # Kubernetes package manager
-    k9s               # terminal UI for Kubernetes clusters
-    kubectl           # Kubernetes command-line tool
-    kubectx           # fast Kubernetes context and namespace switcher
-    pre-commit        # framework for managing git pre-commit hooks
-    prek              # pre-commit hook runner
-    python@3.14       # Python interpreter version 3.14
-    ripgrep           # fast recursive grep with regex support
-    taplo             # TOML toolkit (formatter, linter, LSP)
-    tlrc              # tldr pages client
-    typos             # source code spell checker
-    usage             # CLI usage spec parser and documentation tool
-    vault             # HashiCorp Vault secrets management CLI
-    viddy             # modern watch command with diff highlighting
-    yq                # YAML/JSON/TOML processor and query tool
-    "github:armgabrielyan/deadbranch"  # find and remove stale git branches
-    "github:bschaatsbergen/cidr"       # CIDR range calculator and inspector
-    "github:hatoo/oha"                 # HTTP load generator and benchmarker
-    "github:imsnif/bandwhich"          # network utilization by process and connection
-    "go:github.com/jrhouston/tfk8s"    # convert Terraform HCL resources to Kubernetes YAML
-)
-
-# Default Python packages installed automatically after each mise Python version install
-DEFAULT_PYTHON_PACKAGES=(
-    azure-cli            # Azure CLI
-    boto3                # AWS SDK for Python
-    check-jsonschema     # JSON Schema validation CLI
-    click                # composable CLI framework
-    GitPython            # Git repository interaction library
-    google-cloud-storage # Google Cloud Storage client
-    google-cloud-compute # Google Cloud Compute client
-    google-cloud-iap     # Google Cloud IAP client
-    hvac                 # HashiCorp Vault API client
-    jinja2               # templating engine
-    loguru               # structured logging library
-    numpy                # numerical computing library
-    pip                  # package installer (keep up to date)
-    pipx                 # install Python CLI tools in isolated environments
-    pytest               # testing framework
-    pytest-cov           # test coverage plugin for pytest
-    python-gitlab        # GitLab API client
-    pytz                 # timezone library
-    PyYAML               # YAML parser and emitter
-    qrcode               # QR code generator
-    ruamel.yaml          # YAML parser with round-trip support
-    toml                 # TOML parser
 )
 
 # Update REQUIRED apt and install packages
@@ -171,6 +112,26 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
     log "$GREEN" "✅ Successfully installed Oh My Zsh and plugins."
 fi
+
+# Dotfiles, after oh-my-zsh: its installer refuses to run once ~/.oh-my-zsh exists.
+# mise comes first and provides chezmoi; the restored mise config then lists every tool.
+log "$BLUE" "\n➔ Installing mise, dotfiles and mise tools..."
+if [ ! -f "$HOME/.local/bin/mise" ]; then
+    curl https://mise.run | sh
+fi
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+# GITHUB_TOKEN lifts GitHub's anonymous API limit (60/h), too low for ~50 mise tools.
+# shellcheck source=/dev/null
+[ -f "$HOME/.zshrc.local" ] && . "$HOME/.zshrc.local"
+if [ ! -d "$HOME/.local/share/chezmoi/.git" ]; then
+    # HTTPS needs no SSH key yet; the remote switches to SSH for pushing.
+    mise exec chezmoi -- chezmoi init --apply --force https://github.com/rqctl/dotfiles.git
+    git -C "$HOME/.local/share/chezmoi" remote set-url origin git@github.com:rqctl/dotfiles.git
+fi
+# GITLAB_TOKEN is for the self-hosted GitLab: mise would send it to gitlab.com for glab (401).
+GITLAB_TOKEN='' mise install
+(cd "$HOME/.local/share/chezmoi" && prek install)
+log "$GREEN" "✅ Dotfiles applied and mise tools installed."
 
 # Set zsh as the default shell
 if [ "$SHELL" != "$(command -v zsh)" ]; then
@@ -233,10 +194,13 @@ if ! command -v warp-cli &>/dev/null; then
     sudo apt-get install -y cloudflare-warp
     log "$GREEN" "✅ Successfully installed Cloudflare Warp."
 
-{{ if .org.vpnOrg }}    log "$BLUE" "\n➔ Configuring Cloudflare Warp..."
-    warp-cli registration new {{ .org.vpnOrg }}
-    log "$GREEN" "✅ Successfully configured Cloudflare Warp."
-{{ end }}fi
+    vpn_org="$(chezmoi execute-template '{{ .org.vpnOrg }}')"
+    if [ -n "$vpn_org" ]; then
+        log "$BLUE" "\n➔ Configuring Cloudflare Warp..."
+        warp-cli registration new "$vpn_org"
+        log "$GREEN" "✅ Successfully configured Cloudflare Warp."
+    fi
+fi
 
 # Install VS Code
 if ! command -v code &>/dev/null; then
@@ -251,7 +215,12 @@ fi
 # Install Slack
 if [ ! -f /etc/apt/sources.list.d/slack.list ]; then
     log "$BLUE" "\n➔ Installing Slack..."
-    curl -s https://packagecloud.io/install/repositories/slacktechnologies/slack/script.deb.sh | sudo bash
+    # Slack only publishes this generic repo (packagecloud's installer picks the Ubuntu
+    # codename, which 404s); key and line match what slack-desktop's cron.daily keeps.
+    curl -fsSL https://packagecloud.io/slacktechnologies/slack/gpgkey \
+        | sudo gpg --yes --dearmor --output /etc/apt/trusted.gpg.d/slack-desktop.gpg
+    echo "deb https://packagecloud.io/slacktechnologies/slack/debian/ jessie main" \
+        | sudo tee /etc/apt/sources.list.d/slack.list
     sudo apt-get update
     sudo apt-get install -y slack-desktop
     log "$GREEN" "✅ Successfully installed Slack."
@@ -319,10 +288,11 @@ if ! command -v docker &>/dev/null; then
         sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    sudo groupadd -f docker
-    sudo usermod -aG docker "$USER"
     log "$GREEN" "✅ Successfully installed Docker."
 fi
+# Outside the install block, so a re-run after a failure still adds the group.
+sudo groupadd -f docker
+sudo usermod -aG docker "$USERNAME"
 
 # Configure Docker daemon (custom bridge IP and address pools to avoid conflicts with internal networks)
 if [ ! -f /etc/docker/daemon.json ]; then
@@ -350,31 +320,10 @@ EOF
     sudo systemctl is-active --quiet docker && sudo systemctl restart docker || true
 fi
 
-log "$BLUE" "\n➔ Installing mise and global mise packages..."
-if [ ! -f "$HOME/.local/bin/mise" ]; then
-    curl https://mise.run | sh
-fi
-
 log "$BLUE" "\n➔ Installing Claude Code..."
 if [ ! -f "$HOME/.local/bin/claude" ]; then
     curl -fsSL https://claude.ai/install.sh | bash
 fi
-
-# The mise and direnv eval lines live in the chezmoi-managed ~/.zshrc.
-
-# Write mise default Python packages — installed automatically after each Python version install
-printf '%s\n' "${DEFAULT_PYTHON_PACKAGES[@]}" > "$HOME/.default-python-packages"
-
-# Write mise default gcloud SDK components — installed automatically after each gcloud install
-if [ ! -f "$HOME/.default-cloud-sdk-components" ]; then
-    cat > "$HOME/.default-cloud-sdk-components" << 'EOF'
-gke-gcloud-auth-plugin
-EOF
-fi
-
-~/.local/bin/mise use -q -g --pin "${MISE_GLOBAL_PACKAGES[@]}"
-export PATH="$HOME/.local/share/mise/shims:$PATH"
-log "$GREEN" "✅ Successfully installed global mise packages."
 
 # Add metadata.google.internal to /etc/hosts if missing
 if ! grep -q "^127.0.0.1 metadata.google.internal" /etc/hosts; then
@@ -431,14 +380,7 @@ TODO_ITEMS=(
     ""
     "=== ACTIONS ==="
     "[ ] Enroll fingerprint: fprintd-enroll"
-    "[ ] If not restoring p10k configuration, run 'p10k configure' to set up your terminal prompt"
     "[ ] Reboot to activate the DisplayLink driver and handle the Docker group membership change"
-    ""
-    "=== RESTORE DOTFILES ==="
-    "[ ] chezmoi init --apply git@github.com:rqctl/dotfiles.git"
-    "    (restores .zshrc, .p10k.zsh, .oh-my-zsh/custom/, .gitconfig,"
-    "     mise/k9s/taplo/ghorg/VS Code configs, and this script)"
-    "[ ] Recreate ~/.zshrc.local with your tokens (chmod 600) — never in the repo"
     ""
     "=== RESTORE FROM BACKUP (secrets and data — not in the dotfiles repo) ==="
     "[ ] Restore GNOME Shell extensions from your manual list"

@@ -85,7 +85,7 @@ eval "$(~/.local/bin/mise activate zsh)"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 #plugins=(git gcloud vault ssh-agent gcloud kubectl zsh-bat zsh-autosuggestions zsh-syntax-highlighting you-should-use zsh-history-substring-search aws mise terragrunt)
-plugins=(git ssh-agent zsh-autosuggestions zsh-syntax-highlighting you-should-use zsh-history-substring-search gcloud mise cog)
+plugins=(git ssh-agent zsh-autosuggestions zsh-syntax-highlighting you-should-use zsh-history-substring-search gcloud mise)
 
 zstyle :omz:plugins:ssh-agent agent-forwarding yes
 zstyle :omz:plugins:ssh-agent identities id_ed25519 id_rsa

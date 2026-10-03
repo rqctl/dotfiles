@@ -50,23 +50,19 @@ untouched; add the key and run `chezmoi apply`.
 ## New machine
 
 ```sh
-# 1. System packages, oh-my-zsh, Docker, drivers, fonts
-bash scripts/custom_local_pc_setup.sh
-
-# 2. Restore the two machine-local files from your backup (password manager):
+# 1. Restore from your backup (password manager), chmod 600 both.
+#    Templates are in this repo on GitHub:
 #    ~/.config/chezmoi/chezmoi.toml   (or start from docs/chezmoi.toml.example)
-#    ~/.zshrc.local                   (or start from ~/.zshrc.local.example)
-chmod 600 ~/.config/chezmoi/chezmoi.toml ~/.zshrc.local
+#    ~/.zshrc.local                   (or start from dot_zshrc.local.example)
 
-# 3. Dotfiles
-chezmoi init --apply git@github.com:rqctl/dotfiles.git
+# 2. Everything else: packages, oh-my-zsh, mise, dotfiles, mise tools, git hooks
+wget -qO setup.sh https://raw.githubusercontent.com/rqctl/dotfiles/main/scripts/executable_custom_local_pc_setup.sh
+bash setup.sh
 ```
 
-Order matters: the setup script installs oh-my-zsh, and chezmoi writes the config
-files inside it. Running chezmoi first leaves `~/.oh-my-zsh` populated and the
-oh-my-zsh installer will refuse to run.
-
-A `gitleaks` pre-commit hook guards the repo. Install it after cloning: `prek install`.
+The script installs mise, which runs chezmoi once to apply the dotfiles; the mise
+config they bring then installs every tool, chezmoi included. It is safe to re-run:
+the applied copy lives at `~/scripts/custom_local_pc_setup.sh`.
 
 ## Machine-local values
 
