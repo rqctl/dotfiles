@@ -21,11 +21,12 @@ turns one source state into different target states on different machines.
 
 | Command | What it does |
 |---|---|
-| `chezmoi edit --apply ~/.zshrc` | edit the **source**, apply on save. The everyday one. |
+| `dot [-t] [file]` | shell function: add if unmanaged, `-t` makes it a template, then `chezmoi edit --apply`. The everyday one. `dot -l` lists managed files by type. |
+| `chezmoi edit --apply ~/.zshrc` | edit the **source**, apply on save. |
 | `chezmoi diff` | what `apply` would change. Read this before applying. |
 | `chezmoi status` | short form. Col 1 = changed since last apply, col 2 = what apply will do. |
 | `chezmoi apply -v` | write target state to `~`. `-n` for a dry run. |
-| `chezmoi re-add` | you edited `~/.zshrc` directly — pull it back into the source. |
+| `chezmoi re-add` | pull direct edits of a *copied* file back into the source. Symlinked files never need it. |
 | `chezmoi update` | `git pull` + `apply`. What you run on your second machine. |
 | `chezmoi cd` | shell in the source repo. `exit` to leave. |
 | `chezmoi managed` | exactly what chezmoi controls. Run it when unsure. |
@@ -142,8 +143,9 @@ Each is reversible; run them in order.
 1. `chezmoi status` then `chezmoi managed` — read the state, change nothing.
 2. `chezmoi edit ~/.oh-my-zsh/custom/10-alias.zsh`, add an alias, then `chezmoi diff`,
    then `chezmoi apply -v`. Note that `edit` opened the *source*, not `~`.
-3. Now edit `~/.oh-my-zsh/custom/10-alias.zsh` directly and run `chezmoi re-add`.
-   Then try the same on `40-cloud.zsh` (a template) and watch it decline.
+3. `ls -l ~/.oh-my-zsh/custom/` — plain files are symlinks into the source (`mode =
+   "symlink"`), templates are copies. Edit `40-cloud.zsh` directly, run `chezmoi apply`,
+   and watch it ask before overwriting; answer `skip`, then undo your edit.
 4. `chezmoi execute-template '{{ .repoRoot }} on {{ .chezmoi.hostname }}'`.
 5. `chezmoi chattr +template ~/.vault`, look at the source filename, then `-- -template`.
 6. `chezmoi forget ~/.vault`, confirm `~/.vault` still exists, then `chezmoi add ~/.vault`.

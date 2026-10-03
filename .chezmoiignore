@@ -3,6 +3,9 @@ README.md
 docs
 docs/**
 
+# Machine-local tokens, never versioned.
+.zshrc.local
+
 # Upstream clones and superseded backups, installed by custom_local_pc_setup.sh.
 .oh-my-zsh/custom/plugins
 .oh-my-zsh/custom/plugins/**

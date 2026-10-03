@@ -9,3 +9,11 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
+  - repo: local
+    hooks:
+      - id: private-values
+        name: no values from chezmoi.toml [data]
+        entry: ./.check-private-values.sh
+        language: system
+        pass_filenames: false
+        always_run: true

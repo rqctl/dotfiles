@@ -2,72 +2,97 @@
 
 Managed with [chezmoi](https://www.chezmoi.io/). No secrets live in this repo.
 
+## Daily loop
+
+| Need | Do |
+|---|---|
+| Edit or add any config file | `dot` (fzf picker) or `dot ~/.some/file` |
+| Back it up | `chezmoi cd`, `git commit -am "..."`, `git push` |
+| A file holds a private value | `dot -t <file>`, see below |
+| What's managed, and how | `dot -l` |
+
+`dot` edits the source and applies it, for plain files and templates alike. A file
+chezmoi doesn't manage yet is added first, even if you then change nothing
+(`chezmoi forget <file>` undoes that); one that looks like it holds a token is
+refused. On a managed file, quitting without changes is a no-op.
+
+Plain files are symlinks into this repo (`mode = "symlink"`), so editing them
+directly, or a tool rewriting them, changes the repo at once. Templates and
+private/executable files stay as copies: edit those through `dot`. A change made
+another way still works on this machine but is not backed up: `chezmoi status`
+shows it as `MM`, and the next apply asks before overwriting it. The usual case is
+VS Code's settings UI, since `settings.json` is a template.
+
+`dot -l` types: `symlink` green (edit anywhere), `template` yellow and `copy` cyan
+(edit with `dot`), `link` purple (a link chezmoi makes to a path outside this repo).
+Colour only on a terminal, and not with `NO_COLOR` set.
+
+### A file holds a private value
+
+Managed or not, same two steps:
+
+```sh
+chezmoi edit-config      # only if the value is new: add it under [data] or [data.org]
+dot -t <file>            # makes it a template, then replace the value with {{ .key }}
+```
+
+e.g. `{{ .gitWorkEmail }}`, `{{ .org.gitlabHost }}`. The rendered file in `~` stays
+identical; only the repo copy holds the placeholder.
+
+Only declared values are protected: gitleaks and `dot` recognise tokens, not personal
+data such as a card number or an email. Once a value is in `chezmoi.toml`, the hook
+refuses any commit while a tracked file still holds it, exactly as written (same
+spacing). It cannot clean what was already pushed: that stays in GitHub's history.
+
+A `{{ .key }}` that isn't declared yet makes the apply fail and leaves the file in `~`
+untouched; add the key and run `chezmoi apply`.
+
 ## New machine
 
 ```sh
 # 1. System packages, oh-my-zsh, Docker, drivers, fonts
 bash scripts/custom_local_pc_setup.sh
 
-# 2. Dotfiles
-chezmoi init --apply git@github.com:rqctl/dotfiles.git
+# 2. Restore the two machine-local files from your backup (password manager):
+#    ~/.config/chezmoi/chezmoi.toml   (or start from docs/chezmoi.toml.example)
+#    ~/.zshrc.local                   (or start from ~/.zshrc.local.example)
+chmod 600 ~/.config/chezmoi/chezmoi.toml ~/.zshrc.local
 
-# 3. Machine-local secrets (never versioned)
-cp ~/.zshrc.local.example ~/.zshrc.local && chmod 600 ~/.zshrc.local && vim ~/.zshrc.local
+# 3. Dotfiles
+chezmoi init --apply git@github.com:rqctl/dotfiles.git
 ```
 
 Order matters: the setup script installs oh-my-zsh, and chezmoi writes the config
 files inside it. Running chezmoi first leaves `~/.oh-my-zsh` populated and the
 oh-my-zsh installer will refuse to run.
 
-## Daily loop
-
-```sh
-chezmoi edit --apply ~/.zshrc   # edit source, apply immediately
-chezmoi diff                    # what apply would change
-chezmoi re-add                  # pull edits made directly in ~ back into the repo
-chezmoi update                  # git pull + apply, on a second machine
-```
-
-## What is and isn't here
-
-Managed: zsh (`.zshrc`, `.zshrc.custom`, `.oh-my-zsh/custom/*.zsh`), `.p10k.zsh`,
-git config, mise, k9s, taplo, ghorg, glab aliases, VS Code settings, `~/.local/bin/tree1`,
-`~/ansible.cfg`, `~/.vault`, and `scripts/custom_local_pc_setup.sh`.
-
-Never managed: `~/.zshrc.local` (tokens), `~/.ssh/`, `~/.gnupg/`, `~/.kube/config`,
-`~/.aws/sso/`, `~/.config/gcloud/`, `~/.config/glab-cli/config.yml`,
-`~/.config/argocd/config`. See `.chezmoiignore`.
-
-`~/.config/Code/User/settings.json` is a template (it holds a `$repoRoot`-relative
-interpreter path). VS Code rewrites that file itself, and `chezmoi re-add` refuses to
-overwrite templates — so settings changed through the VS Code UI are lost on the next
-`chezmoi apply`. Change it with `chezmoi edit ~/.config/Code/User/settings.json`.
-
 A `gitleaks` pre-commit hook guards the repo. Install it after cloning: `prek install`.
 
-## Machine-specific values
+## Machine-local values
 
-Nothing is pinned to one machine, and **the repo contains no employer-identifying
-data**. Values come from two places, neither of them committed:
+Two files, never committed. Back both up outside git.
 
-**Personal / per-machine** — prompted once by `.chezmoi.toml.tmpl`, stored in
-`~/.config/chezmoi/chezmoi.toml`: `repoRoot`, work and personal git identity, and
-`isWork` (set false on a personal machine to skip the work-only modules).
+| File | Holds |
+|---|---|
+| `~/.zshrc.local` | tokens, exported as env vars |
+| `~/.config/chezmoi/chezmoi.toml` | every private value a managed file needs: git identities, `isWork`, `repoRoot`, organisation values under `[data.org]`, anything moved out with `dot -t` |
 
-**Organisation-specific** — `.chezmoidata/99-local.yaml`, which is git-ignored.
-`.chezmoidata/00-defaults.yaml` is committed and holds neutral placeholders for the
-same keys; `99-` sorts after `00-`, so the local file overrides every one of them.
+**The repo contains no employer-identifying data.** `.chezmoidata/00-defaults.yaml`
+holds neutral placeholders for the `[data.org]` keys, so everything renders without
+real values (`gitlab.example.com`, empty Vault list, VPN step skipped). Get the real
+values from whoever shared this repo with you.
 
-```sh
-chezmoi cd
-cp docs/99-local.yaml.example .chezmoidata/99-local.yaml
-$EDITOR .chezmoidata/99-local.yaml
-chezmoi apply
-```
+Pre-commit hooks: `gitleaks` for tokens, and `.check-private-values.sh`, which
+refuses any commit while a tracked file contains a value (6+ characters) from `[data]`
+in `chezmoi.toml`. Bypass a false positive with `git commit --no-verify`.
 
-Without that file everything still renders and parses — you get `gitlab.example.com`,
-an empty Vault list, and the VPN registration step is skipped. Get the real values
-from whoever shared this repo with you; they are deliberately not in git.
+Set `isWork = false` on a personal machine to skip the work-only modules.
+
+## Never in this repo
+
+Files holding credentials or connection secrets: SSH and GPG keys, kubeconfig, cloud
+CLI auth (`~/.aws/sso/`, `~/.config/gcloud/`), and tool tokens (`glab`, `argocd`).
+Back them up separately; the setup script's TODO lists them.
 
 ## Git identity
 

@@ -16,6 +16,46 @@ alias k9S='k9s'
 alias cm='chezmoi'
 alias sk='sofka'
 
+## ----- Dotfiles -----
+
+# Usage: dot [-t] [file] | dot -l
+# Edit a config file through chezmoi and apply it; an unmanaged file is added first.
+# No file: pick a managed one with fzf. -t: make it a template first (see README).
+# -l: list managed files with their type, sorted by path.
+dot() {
+    if [[ $1 == -l ]]; then
+        local -a src tgt; local i t p
+        # green: edit anywhere; yellow/cyan: edit with dot; purple: outside the repo
+        local -A color=(symlink green template yellow copy cyan link magenta)
+        src=(${(f)"$(chezmoi managed -i files,symlinks -p source-absolute)"})
+        tgt=(${(f)"$(chezmoi target-path $src)"})
+        for i in {1..$#src}; do
+            # Derived from the source name, matching how mode = "symlink" deploys it.
+            case ${src[i]:t} in
+                symlink_*) t=link ;;
+                *.tmpl) t=template ;;
+                private_*|executable_*|readonly_*) t=copy ;;
+                *) t=symlink ;;
+            esac
+            printf '%-8s  %s\n' $t ${tgt[i]/#$HOME/\~}
+        done | LC_ALL=C sort -b -k2 | while read -r t p; do
+            if [[ -t 1 && -z $NO_COLOR ]]; then
+                print -P "%F{${color[$t]}}${(r:8:)t}  ${p//\%/%%}%f"
+            else
+                printf '%-8s  %s\n' $t $p
+            fi
+        done
+        return
+    fi
+    local tpl; [[ $1 == -t ]] && { tpl=1; shift; }
+    # symlink mode: plain files are listed as symlinks
+    local f=${1:-$(chezmoi managed --include=files,symlinks --path-style=absolute | fzf)}
+    [[ -n $f ]] || return
+    chezmoi source-path "$f" &>/dev/null || chezmoi add --secrets=error "$f" || return
+    [[ -z $tpl ]] || chezmoi chattr +template "$f" || return
+    chezmoi edit --apply "$f"
+}
+
 ## ----- Cleaning -----
 
 alias dockerrm='docker container prune -f'

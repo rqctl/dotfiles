@@ -1,0 +1,37 @@
+# Copy to ~/.config/chezmoi/chezmoi.toml (chmod 600), fill in, then `chezmoi apply`.
+# Machine-local, never committed: back it up outside git (password manager).
+# Any quoted value under [data] of 6+ characters is also blocked from commits
+# by .check-private-values.sh.
+
+# The login umask is 002; without this chezmoi would write group-writable targets.
+umask = 0o022
+
+# /tmp is tmpfs here; chezmoi edit hardlinks into tempDir and fails cross-device.
+tempDir = "~/.cache/chezmoi/tmp"
+
+# Plain files become symlinks into the source repo: edit them in place, no re-add.
+# Templates and private/executable files stay as copies.
+mode = "symlink"
+
+[data]
+    isWork            = true                       # false skips the work-only modules
+    repoRoot          = "~/gitlab"                 # root dir for GitLab clones
+    gitWorkName       = "Your Name"
+    gitWorkEmail      = "you@your-company.example"
+    gitWorkSigningKey = "your-gpg-key-id"
+    gitPersonalName   = "your-github-handle"
+    gitPersonalEmail  = "you@users.noreply.github.com"
+
+[data.org]
+    gitlabHost       = "gitlab.your-company.example"  # self-hosted GitLab host
+    vpnOrg           = "your-vpn-org"                 # cloudflare warp registration name ("" to skip)
+    awsProfile       = "default"                      # default AWS_PROFILE
+    gcpQuotaProject  = "your-gcp-quota-project"       # GOOGLE_CLOUD_QUOTA_PROJECT
+    gcpProjectFilter = "project_id ~ prefix-"         # gcloud filter used by gssh
+    ghorgOrgs        = "group-a group-b group-c"      # space-separated groups for ghorgca
+    debugImage       = "registry.example/path/image:tag"  # image for the k9s debug plugin
+
+[data.org.vault]
+    addrs    = ["https://vault-a.your-company.example", "https://vault-b.your-company.example"]  # last = default instance
+    authPath = "oidc"                                 # vault auth mount name
+    authRole = "your-vault-role"
