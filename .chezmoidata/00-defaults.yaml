@@ -13,6 +13,9 @@ org:
     addrs: []
     authPath: oidc
     authRole: default
+  nimbus:
+    lockBucket: ""       # GCS bucket for nimbus run locks
+    lockProject: ""
   claude:
     marketplace: ""      # Claude Code plugin marketplace, rendered only when set
     marketplaceUrl: ""

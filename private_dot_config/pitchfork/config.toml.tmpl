@@ -1,6 +1,6 @@
 # USAGE: pitchfork start nimbus
 [env]
-VAULT_ADDR = "{{ last .org.vault.addrs }}"
+VAULT_ADDR = "{{ last .org.vault.addrs | default "" }}"
 NIMBUS_IAC_PATH = "~/gitlab/idp/resource-plane/infra-core"
 NIMBUS_PROVIDER_CACHE = "1"
 NIMBUS_COMMAND_PREFIX = "mise exec --"

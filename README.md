@@ -71,7 +71,7 @@ the applied copy lives at `~/scripts/custom_local_pc_setup.sh`.
 
 ## Machine-local values
 
-Two files, never committed. Back both up outside git.
+Two files, never committed. `backup_pc.sh` includes both.
 
 | File | Holds |
 |---|---|
@@ -85,7 +85,8 @@ values from whoever shared this repo with you.
 
 Pre-commit hooks: `gitleaks` for tokens, and `.check-private-values.sh`, which
 refuses any commit while a tracked file contains a value (6+ characters) from `[data]`
-in `chezmoi.toml`. Bypass a false positive with `git commit --no-verify`.
+in `chezmoi.toml`; `localUser` is declared there so the login name can't leak.
+Bypass a false positive with `git commit --no-verify`.
 
 Set `isWork = false` on a personal machine to skip the work-only modules.
 
@@ -93,7 +94,7 @@ Set `isWork = false` on a personal machine to skip the work-only modules.
 
 Files holding credentials or connection secrets: SSH and GPG keys, kubeconfig, cloud
 CLI auth (`~/.aws/sso/`, `~/.config/gcloud/`), and tool tokens (`glab`, `argocd`).
-Back them up separately; the setup script's TODO lists them.
+`backup_pc.sh` backs them up (see New machine).
 
 ## Git identity
 
