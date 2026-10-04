@@ -21,6 +21,7 @@ mode = "symlink"
     gitWorkSigningKey = "your-gpg-key-id"
     gitPersonalName   = "your-github-handle"
     gitPersonalEmail  = "you@users.noreply.github.com"
+    localUser         = "your-login"                 # local username; listed so the commit hook blocks it
 
 [data.org]
     gitlabHost       = "gitlab.your-company.example"  # self-hosted GitLab host
