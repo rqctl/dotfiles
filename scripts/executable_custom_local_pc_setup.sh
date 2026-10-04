@@ -219,19 +219,6 @@ if [ "$SHELL" != "$(command -v zsh)" ]; then
     log "$GREEN" "✅ Default shell set to zsh (takes effect on next login)."
 fi
 
-# Install MesloLGS NF fonts required by Powerlevel10k
-if [ ! -f "$HOME/.local/share/fonts/MesloLGS NF Regular.ttf" ]; then
-    log "$BLUE" "\n➔ Installing MesloLGS NF fonts..."
-    mkdir -p "$HOME/.local/share/fonts"
-    FONT_BASE="https://github.com/romkatv/powerlevel10k-media/raw/master"
-    curl -fsSL "${FONT_BASE}/MesloLGS%20NF%20Regular.ttf"      -o "$HOME/.local/share/fonts/MesloLGS NF Regular.ttf"
-    curl -fsSL "${FONT_BASE}/MesloLGS%20NF%20Bold.ttf"         -o "$HOME/.local/share/fonts/MesloLGS NF Bold.ttf"
-    curl -fsSL "${FONT_BASE}/MesloLGS%20NF%20Italic.ttf"       -o "$HOME/.local/share/fonts/MesloLGS NF Italic.ttf"
-    curl -fsSL "${FONT_BASE}/MesloLGS%20NF%20Bold%20Italic.ttf" -o "$HOME/.local/share/fonts/MesloLGS NF Bold Italic.ttf"
-    fc-cache -f "$HOME/.local/share/fonts"
-    log "$GREEN" "✅ MesloLGS NF fonts installed."
-fi
-
 # GNOME extensions; they load at the next login
 log "$BLUE" "\n➔ Installing GNOME extensions..."
 shell_major="$(gnome-shell --version | grep -oE '[0-9]+' | head -1)"
