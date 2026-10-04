@@ -1,0 +1,18 @@
+# USAGE: pitchfork start nimbus
+[env]
+VAULT_ADDR = "{{ last .org.vault.addrs }}"
+NIMBUS_IAC_PATH = "~/gitlab/idp/resource-plane/infra-core"
+NIMBUS_PROVIDER_CACHE = "1"
+NIMBUS_COMMAND_PREFIX = "mise exec --"
+NIMBUS_MAX_CONCURRENCY = "16"
+NIMBUS_APPLY_ENABLED = "1"
+NIMBUS_CATALOG_REFRESH_INTERVAL = "300"
+NIMBUS_LOCKS_ENABLED = "1"
+NIMBUS_LOCK_BUCKET = "{{ .org.nimbus.lockBucket }}"
+NIMBUS_LOCK_PROJECT = "{{ .org.nimbus.lockProject }}"
+
+[daemons.nimbus]
+mise = true
+dir = "~/gitlab/nimbus"
+run = "bin/nimbus"
+port = 4000

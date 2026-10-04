@@ -20,6 +20,8 @@ docs/**
 .config/ghorg/**
 .config/glab-cli
 .config/glab-cli/**
+.config/pitchfork
+.config/pitchfork/**
 .config/mise/conf.d/tasks.toml
 .vault
 {{ end -}}

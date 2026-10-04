@@ -36,6 +36,10 @@ mode = "symlink"
     authPath = "oidc"                                 # vault auth mount name
     authRole = "your-vault-role"
 
+[data.org.nimbus]
+    lockBucket  = "your-tf-lock-bucket"            # GCS bucket for nimbus run locks
+    lockProject = "your-tfstate-project"
+
 [data.org.claude]
     marketplace    = "your-claude-marketplace"                       # Claude Code plugin marketplace ("" to skip)
     marketplaceUrl = "git@gitlab.your-company.example:group/marketplace.git"
