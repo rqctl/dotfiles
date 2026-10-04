@@ -50,11 +50,15 @@ untouched; add the key and run `chezmoi apply`.
 
 ## New machine
 
+Before wiping the old one: `~/scripts/backup_pc.sh <usb-dir>` (secrets, zsh history,
+Claude memories, personal folders, in one passphrase-encrypted archive).
+
 ```sh
-# 1. Restore from your backup (password manager), chmod 600 both.
-#    Templates are in this repo on GitHub:
-#    ~/.config/chezmoi/chezmoi.toml   (or start from docs/chezmoi.toml.example)
-#    ~/.zshrc.local                   (or start from dot_zshrc.local.example)
+# 1. Restore the backup archive (holds chezmoi.toml and .zshrc.local), then GPG keys
+gpg -d pc-backup-*.tar.gz.gpg | tar -xz -C ~
+gpg --import ~/.gnupg-export/secret-keys.asc
+gpg --import-ownertrust ~/.gnupg-export/ownertrust.txt && rm -rf ~/.gnupg-export
+#    No archive? Start from docs/chezmoi.toml.example and dot_zshrc.local.example.
 
 # 2. Everything else: packages, oh-my-zsh, mise, dotfiles, mise tools, git hooks
 wget -qO setup.sh https://raw.githubusercontent.com/rqctl/dotfiles/main/scripts/executable_custom_local_pc_setup.sh
