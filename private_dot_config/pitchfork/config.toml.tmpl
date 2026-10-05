@@ -3,6 +3,8 @@
 VAULT_ADDR = "{{ last .org.vault.addrs | default "" }}"
 NIMBUS_IAC_PATH = "~/gitlab/idp/resource-plane/infra-core"
 NIMBUS_PROVIDER_CACHE = "1"
+NIMBUS_PROVIDER_CACHE_DIR = "~/.cache/terragrunt/providers"
+NIMBUS_APPLY_MAX_PLAN_AGE_MINUTES = "240"
 NIMBUS_COMMAND_PREFIX = "mise exec --"
 NIMBUS_MAX_CONCURRENCY = "16"
 NIMBUS_APPLY_ENABLED = "1"
