@@ -112,6 +112,11 @@ _upgrade_omz() {
 }
 
 _upgrade_gcloud() {
+    # Components first: it can update the SDK in place (mise's release-age delay
+    # lags it behind), replacing the bundled python and dropping pip installs.
+    _upgrade_step "GCLOUD: components"
+    gcloud components update
+
     _upgrade_step "GCLOUD: python packages"
     local gcloud_python
     gcloud_python=$(gcloud info --format="value(basic.python_location)")
@@ -120,9 +125,6 @@ _upgrade_gcloud() {
     else
         print -P "%F{yellow}Skipped: gcloud reported no usable python (got '${gcloud_python:-nothing}').%f"
     fi
-
-    _upgrade_step "GCLOUD: components"
-    gcloud components update
 }
 
 # Usage: upgrade
