@@ -16,7 +16,7 @@ url = "https://{{ .org.gitlabHost }}"
 # `token_command` is the preferred way to keep a token out of this file: its stdout,
 # trimmed, is the token, and a non-zero exit is a startup error.
 # token_command = "security find-generic-password -s gitlab-pat -w"
-
+#
 # A literal token works but means this file holds a credential. mrq warns at startup if
 # the file is readable by anyone but you.
 # token = "glpat-..."
@@ -44,29 +44,38 @@ url = "https://{{ .org.gitlabHost }}"
 show_drafts = true
 # relative_times = true
 
-# Show the first assignee's initials (Charles Billow -> CBI) in the ASG column instead
-# of Yes/No. Green when the assignee is you, `-` when there is none.
-# assignee_trigram = false
+# How the ASG / APPROVER / REVIEWER / MERGED BY columns name people. One of:
+#
+#   yes_no    "Yes"/"No" against whether you are one of them
+#   username  the first person's username, +N for the rest, `-` for none
+#   trigram   the first person's initials (Charles Billow -> CBI), `-` for none
+#
+# Green marks the row as yours in username and trigram mode; yes_no already says so in
+# text.
+# assigned_display = "yes_no"
+# approver_display = "username"
+# reviewer_display = "username"
+# merged_by_display = "username"
+
+# Which column is the clickable link to the merge request, in terminals that support
+# hyperlinks: "title", "id", "both", or "none" to turn hyperlinks off. "id" only links
+# while the id column is on screen (it is wide-only by default; press w).
+link = "none"
 
 # Mouse capture. Off by default so the terminal keeps its native selection and copy.
+# The details and comments popups capture it while open regardless, to select text.
 # mouse = false
-
-link = "none"
 
 # set_terminal_title = true
 
-# Display order, left to right. Any subset of these keys, each at most once; `sort.column`
-# below has to be one of them.
-# columns = ["approved", "author", "repo", "title", "pipeline", "assigned", "approver", "reviewer", "age", "updated", "diff"]
+# Display order, left to right. Any subset of these keys (plus branch and merged_by), each at most once;
+# `sort.column` below has to be one of them. A ":wide" suffix hides that column until wide mode
+# (w) is toggled on; approved, author, repo, title and pipeline identify a row and can never
+# be wide-only. merged_by is not in the default list; when added, it only shows while a merged
+# merge request is on screen. A [[filter]] can override the whole list with its own `columns`.
+# columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assigned", "approver:wide", "reviewer:wide", "age", "updated", "diff:wide"]
 
-# Columns hidden until wide mode (w) is toggled on, in addition to diff, which is always
-# wide-only. Must be a subset of columns above; approved, author, repo, title and pipeline
-# identify a row and can never be listed here. Defaults to ["approver", "reviewer"], but
-# only while columns above is also left at its default -- set your own columns and this
-# reverts to hiding nothing extra unless you list it here too.
-# wide_columns = []
-
-# Start with wide mode on; w still toggles it. Needs flou/mrq#1.
+# Start with wide mode on; w still toggles it.
 wide = true
 
 [skin]
@@ -145,15 +154,20 @@ command = "notify-send -a MRQ {title} {body}"
 
 [[filter]]
 name = "Queue"
-has_reviewer = false
 scope = "instance"
 labels = ["sre-review::ask"]
+has_reviewer = false
+# state = "opened"                  # opened | merged | closed | all
+# show_drafts = false               # per-filter override of [ui].show_drafts
+# columns = ["approved", "author", "title", "age", "branch:wide"]   # per-filter override of [ui].columns
+# notify = true                     # per-filter override of [notifications].enabled
+# max_results = 100                 # 1..=500
 
 [[filter]]
 name = "In Review"
-has_reviewer = true
 scope = "instance"
 labels = ["sre-review::ask"]
+has_reviewer = true
 
 [[filter]]
 name = "Mine"
@@ -197,8 +211,8 @@ max_results = 100
 [[filter]]
 name = "Merged"
 scope = "project"
-path = "idp/resource-plane/infra-core"
 state = "merged"
+path = "idp/resource-plane/infra-core"
 not_labels = ["sre-review::ship", "sre-review::show", "sre-review::ask"]
 updated_after_days = 30
 max_results = 100
@@ -206,6 +220,12 @@ max_results = 100
 # [[filter]]
 # name = "Reviewing"
 # scope = "review_requested"
+
+# A list shows the union of its scopes, each merge request once. It may only combine
+# assigned, review_requested and authored.
+# [[filter]]
+# name = "Needs my attention"
+# scope = ["assigned", "review_requested"]
 
 # [[filter]]
 # name = "Platform"
@@ -241,28 +261,33 @@ max_results = 100
 [keys]
 # quit            = ["q", "ctrl-c"]
 # refresh         = ["ctrl-r"]
-# refresh_visible = []              # ships unbound
+# refresh_visible = ["r"]
+# reload_config   = ["shift-R"]
 # down            = ["j", "down"]
 # up              = ["k", "up"]
 # page_down       = ["ctrl-d", "pagedown"]
 # page_up         = ["ctrl-u", "pageup"]
+# full_page_down  = ["ctrl-f"]
+# full_page_up    = ["ctrl-b"]
 # top             = ["g", "home"]
 # bottom          = ["shift-G", "end"]
 # open_mr         = ["o", "enter"]
 # open_pipeline   = ["p"]
 # open_project    = ["shift-O"]
+# open_diffs      = ["shift-D"]
 # copy_url        = ["y"]
 # copy_branch     = ["shift-Y"]
-# show_details    = ["i"]
-# toggle_drafts   = ["d"]
+# show_details    = ["d"]
+# show_discussions = ["shift-C"]
+# toggle_drafts   = ["ctrl-a"]
 # toggle_wide     = ["w"]
 # sort_menu       = ["shift-S"]
 # invert_sort     = ["shift-I"]
 # skin_menu       = ["ctrl-t"]
-# next_filter     = ["]", "right"]
-# prev_filter     = ["[", "left"]
+# next_filter     = ["]", "right", "tab"]
+# prev_filter     = ["[", "left", "shift-tab"]
 # filter_menu     = ["f"]
 # search          = ["/"]
 # clear_search    = ["esc"]
 # help            = ["?", "f1"]
-# log_menu        = []              # ships unbound
+# log_menu        = ["shift-L"]
