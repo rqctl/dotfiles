@@ -73,7 +73,7 @@ link = "none"
 # (w) is toggled on; approved, author, repo, title and pipeline identify a row and can never
 # be wide-only. merged_by is not in the default list; when added, it only shows while a merged
 # merge request is on screen. A [[filter]] can override the whole list with its own `columns`.
-# columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assigned", "approver:wide", "reviewer:wide", "age", "updated", "diff:wide"]
+columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assigned", "approver:wide", "reviewer:wide", "merged_by:wide", "age", "updated", "diff:wide"]
 
 # Start with wide mode on; w still toggles it.
 wide = true
@@ -108,10 +108,10 @@ wide = true
 # enabled = true
 
 # auto | osc9 | osc777 | command | none
-backend = "command"
+# backend = "auto"
 
 # Used when backend = "command"; {title} and {body} are substituted.
-command = "notify-send -a MRQ {title} {body}"
+# command = ""
 
 # bell = true
 
