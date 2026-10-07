@@ -10,6 +10,7 @@ window-padding-color = extend
 scrollback-limit = 100000000
 confirm-close-surface = true
 copy-on-select = clipboard
+shell-integration-features = ssh-env
 
 # Sessions -> tabs
 keybind = ctrl+t=new_tab
