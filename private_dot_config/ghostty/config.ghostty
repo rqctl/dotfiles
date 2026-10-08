@@ -1,6 +1,6 @@
 theme = Catppuccin Mocha
 # Pastel palette makes tig's default white-on-green/blue unreadable
-minimum-contrast = 3
+minimum-contrast = 1.5
 adjust-cell-width = -7%
 font-family = Ubuntu Sans Mono
 font-size = 9.5
