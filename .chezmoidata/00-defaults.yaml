@@ -6,7 +6,7 @@ org:
   vpnOrg: ""
   awsProfile: default
   gcpQuotaProject: ""
-  gcpProjectFilter: ""
+  gcpOrgId: ""           # numeric GCP organization id, used by gssh
   ghorgOrgs: ""
   debugImage: busybox:latest
   vault:

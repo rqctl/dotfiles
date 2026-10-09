@@ -1,80 +1,109 @@
+# shellcheck disable=all
+# vim: set filetype=zsh
 # ----- CLOUD -----
 
 ## -----  SSH  -----
 
-# Cache "$@" stdout under ~/.cache/gssh; gcloud list calls are slow.
+# Cache "$@" stdout under ~/.cache/gssh; listing instances is slow.
 # Caches only a successful, non-empty run — an unauthenticated gcloud would
-# otherwise pin an empty list for the day. Falls back to a stale cache.
+# otherwise pin an empty list for the day. A stale cache is served at once and
+# refreshed in the background.
 _gssh_cached() {
     local key="$1"; shift
     local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/gssh"
     local cache_file="$cache_dir/$key" tmp
     local cache_duration_s=86400
     mkdir -p "$cache_dir"
+    tmp="$cache_file.$$"
 
-    if [[ -s "$cache_file" ]] && (( $(date +%s) - $(date +%s -r "$cache_file") <= $cache_duration_s )); then
+    if [[ -s "$cache_file" ]]; then
         command cat "$cache_file"
+        if (( $(date +%s) - $(date +%s -r "$cache_file") > $cache_duration_s )); then
+            { "$@" > "$tmp" 2>/dev/null && [[ -s "$tmp" ]] && command mv "$tmp" "$cache_file" \
+                || command rm -f "$tmp"; } &!
+        fi
         return 0
     fi
 
-    tmp="$cache_file.$$"
     if "$@" > "$tmp" && [[ -s "$tmp" ]]; then
         command mv "$tmp" "$cache_file"
+        command cat "$cache_file"
     else
         command rm -f "$tmp"
-        [[ -s "$cache_file" ]] || return 1
-        echo "gssh: could not refresh '$key', using the cached copy." >&2
-    fi
-    command cat "$cache_file"
-}
-
-# Drop the host key of one instance, so IAP's recycled IPs stop blocking logins.
-# Without an instance id there is nothing to target, hence the blunt fallback.
-_gssh_forget_host() {
-    local instance_id="$1" kh="$HOME/.ssh/google_compute_known_hosts"
-    [[ -f "$kh" ]] || return 0
-    if [[ -n "$instance_id" ]]; then
-        ssh-keygen -q -R "compute.$instance_id" -f "$kh" &>/dev/null
-    else
-        echo "" > "$kh"
+        return 1
     fi
 }
 
-# Usage: gssh [-f] — pick a project and instance, then SSH in through IAP.
-# -f drops the cached project/instance lists first.
+# Direct REST calls: `gcloud ... list` costs seconds of CLI startup.
+_gssh_api() {
+    local token; token=$(gcloud auth print-access-token 2>/dev/null) || return 1
+    curl -sf -H "Authorization: Bearer $token" "$1"
+}
+
+# Every instance of the org as "name zone project state", from one Cloud Asset search.
+# The index lags new VMs by a few minutes; see _gssh_list_project_instances.
+_gssh_list_instances() {
+    setopt local_options pipefail
+    local org={{ .org.gcpOrgId | quote }} url page="" resp out=""
+    [[ -z $org ]] && { echo "gssh: set org.gcpOrgId in chezmoi.toml." >&2; return 1; }
+    while :; do
+        url="https://cloudasset.googleapis.com/v1/organizations/${org}:searchAllResources?assetTypes=compute.googleapis.com/Instance&readMask=name,state&pageSize=500"
+        [[ -n $page ]] && url+="&pageToken=$page"
+        resp=$(_gssh_api "$url") || return 1
+        out+=$(jq -r '.results[]? | (.name | capture("projects/(?<p>[^/]+)/zones/(?<z>[^/]+)/instances/(?<n>.+)$")) + {s: .state} | "\(.n) \(.z) \(.p) \(.s)"' <<< "$resp")$'\n'
+        page=$(jq -r '.nextPageToken // empty' <<< "$resp")
+        [[ -z $page ]] && break
+    done
+    sed '/^$/d' <<< "$out"
+}
+
+# Same format for one project, straight from the Compute API (no indexing lag).
+_gssh_list_project_instances() {
+    setopt local_options pipefail
+    _gssh_api "https://compute.googleapis.com/compute/v1/projects/$1/aggregated/instances?maxResults=500&fields=items/*/instances(name,zone,status)" \
+        | jq -r --arg p "$1" '.items[]?.instances[]? | "\(.name) \(.zone | split("/") | last) \($p) \(.status)"'
+}
+
+# Swap one project's lines in the cache for live data.
+_gssh_refresh_project() {
+    local project="$1" cache_file="${XDG_CACHE_HOME:-$HOME/.cache}/gssh/instances" fresh others
+    fresh=$(_gssh_list_project_instances "$project") || return 1
+    others=$(_gssh_cached instances _gssh_list_instances) || return 1
+    { awk -v p="$project" '$3 != p' <<< "$others"; print -r -- "$fresh"; } \
+        | sed '/^$/d' > "$cache_file.$$" \
+        && command mv "$cache_file.$$" "$cache_file"
+}
+
+_gssh_usage() {
+    echo "Usage: gssh [-r] [-f <project>]"
+    echo "  -r            Refresh the whole instance cache (Cloud Asset API)"
+    echo "  -f <project>  Refresh one project live (Compute API), for a just-created VM"
+    echo "  -h            Show this help message"
+}
+
+# Usage: gssh [-r] [-f <project>] — pick an instance, then SSH in through IAP.
 gssh() {
-    local flush=0 opt OPTIND=1
-    while getopts "fh" opt; do
+    local refresh=0 fresh_project="" opt OPTIND=1
+    while getopts "f:rh" opt; do
         case $opt in
-            f) flush=1 ;;
-            h) echo "Usage: gssh [-f]   (-f: refresh the cached project/instance lists)"; return 0 ;;
-            *) echo "Usage: gssh [-f]"; return 1 ;;
+            f) fresh_project=$OPTARG ;;
+            r) refresh=1 ;;
+            h) _gssh_usage; return 0 ;;
+            *) _gssh_usage; return 1 ;;
         esac
     done
-    (( flush )) && command rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/gssh"/{projects,instances_*}
+    (( refresh )) && command rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/gssh/instances"
+    if [[ -n $fresh_project ]]; then
+        _gssh_refresh_project "$fresh_project" \
+            || { echo "Cannot refresh $fresh_project — check the project id, or run login_gcp."; return 1; }
+    fi
 
-    local projects instances instance_with_zone gcp_project gcp_instance gcp_zone
-
-    # projectId, not name: --project rejects display names, and the two differ
-    # for some projects.
-    projects=$(_gssh_cached projects \
-        gcloud projects list --filter='{{ .org.gcpProjectFilter }}' --format='value(projectId)') \
-        || { echo "Cannot list GCP projects — run login_gcp, then gssh -f."; return 1; }
-    gcp_project=$(sort <<< "$projects" | fzf -1 -e --prompt="Select GCP Project: ")
-    [[ -z $gcp_project ]] && return 1
-
-    instances=$(_gssh_cached "instances_${gcp_project}" \
-        gcloud --project "$gcp_project" compute instances list \
-        --format="value(name,zone.basename(),id)" --sort-by="name") \
-        || { echo "Cannot list instances of $gcp_project — run login_gcp, then gssh -f."; return 1; }
-    # The id is carried along for _gssh_forget_host but kept out of the picker.
-    instance_with_zone=$(column -t <<< "$instances" \
-        | fzf -1 -e --with-nth=1,2 --prompt="Select instance: ")
-    [[ -z $instance_with_zone ]] && return 1
-
-    gcp_instance=$(awk '{print $1}' <<< "$instance_with_zone")
-    gcp_zone=$(awk '{print $2}' <<< "$instance_with_zone")
-    _gssh_forget_host "$(awk '{print $3}' <<< "$instance_with_zone")"
+    local instances picked gcp_instance gcp_zone gcp_project
+    instances=$(_gssh_cached instances _gssh_list_instances) \
+        || { echo "Cannot list instances — run login_gcp, then gssh -r."; return 1; }
+    picked=$(sort -k3,3 -k2,2 -k1,1 -k4,4 <<< "$instances" | column -t | fzf -1 -e -q "$fresh_project" --prompt="Select instance: ")
+    [[ -z $picked ]] && return 1
+    read -r gcp_instance gcp_zone gcp_project _ <<< "$picked"
 
     local command_ssh="gcloud --project $gcp_project compute ssh $gcp_instance --zone $gcp_zone --tunnel-through-iap"
     echo $command_ssh && print -s "$command_ssh"

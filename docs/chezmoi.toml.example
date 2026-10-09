@@ -28,7 +28,7 @@ mode = "symlink"
     vpnOrg           = "your-vpn-org"                 # cloudflare warp registration name ("" to skip)
     awsProfile       = "default"                      # default AWS_PROFILE
     gcpQuotaProject  = "your-gcp-quota-project"       # GOOGLE_CLOUD_QUOTA_PROJECT
-    gcpProjectFilter = "project_id ~ prefix-"         # gcloud filter used by gssh
+    gcpOrgId         = "123456789012"                 # GCP organization id, used by gssh
     ghorgOrgs        = "group-a group-b group-c"      # space-separated groups for ghorgca
     debugImage       = "registry.example/path/image:tag"  # image for the k9s debug plugin
 
