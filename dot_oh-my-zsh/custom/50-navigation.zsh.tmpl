@@ -53,17 +53,13 @@ cdv() {
 }
 
 
-# Usage: ghorgca — clone every org in parallel, then report the failures.
+# Usage: ghorgca — clone every org in turn, then report the failures.
+# Sequential on purpose: ghorg's interactive prune prompt needs the foreground tty.
 ghorgca() {
-    local -a orgs=({{ .org.ghorgOrgs }}) pids=() failed=()
-    local org i
+    local -a orgs=({{ .org.ghorgOrgs }}) failed=()
+    local org
     for org in $orgs; do
-        ghorg clone "$org" &
-        # Quoted: in an unquoted array assignment zsh takes $! literally.
-        pids+=("$!")
-    done
-    for i in {1..$#orgs}; do
-        wait $pids[i] || failed+=("$orgs[i]")
+        ghorg clone "$org" || failed+=("$org")
     done
     if (( ${#failed} )); then
         echo "ghorgca: failed for ${failed[*]}" >&2
