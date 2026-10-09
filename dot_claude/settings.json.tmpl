@@ -1,12 +1,11 @@
 {
-  "preferredNotifChannel": "notifications_disabled",
   "permissions": {
     "allow": [
       "Bash({{ .chezmoi.homeDir }}/.claude/bin/clip:*)",
       "Bash({{ .chezmoi.homeDir }}/.claude/bin/clip *)"
     ]
   },
-  "model": "opus",
+  "model": "sonnet",
   "hooks": {
     "PostToolUse": [
       {
@@ -55,6 +54,7 @@
   "effortLevel": "medium",
   "tui": "fullscreen",
   "theme": "dark",
+  "preferredNotifChannel": "notifications_disabled",
   "autoMode": {
     "soft_deny": [
       "$defaults",
