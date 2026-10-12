@@ -59,9 +59,15 @@ _prek_stage_and_run() {
     prek run --files $(gdiff)
 }
 
+# Repos without a prek config get no hook and PREK_ALLOW_NO_CONFIG, so prek
+# calls are no-ops there; call from a subshell so the export doesn't leak.
 # --git-path resolves the shared hooks dir; in a worktree .git is a file, so
 # $(gpwd)/.git/hooks/... never matches.
 _prek_installed() {
+    if [[ ! -f prek.toml && ! -f .pre-commit-config.yaml ]]; then
+        export PREK_ALLOW_NO_CONFIG=1
+        return 0
+    fi
     [[ -f "$(git rev-parse --git-path hooks/pre-commit)" ]] || prek install
 }
 
@@ -94,26 +100,13 @@ pcr() {
       fi )
 }
 
-# Usage: gitacp [-n] <subject> [body] — pull, add, commit and push in one go.
-# -n allows repos without a prek config.
+# Usage: gitacp <subject> [body] — pull, add, commit and push in one go.
 gitacp() {
-    local opt OPTIND=1 PREK_ALLOW_NO_CONFIG
-    while getopts "n" opt; do
-        case $opt in
-            n) PREK_ALLOW_NO_CONFIG=1; export PREK_ALLOW_NO_CONFIG ;;
-            *) echo "Usage: gitacp [-n] <subject> [body]"; return 1 ;;
-        esac
-    done
-    shift $((OPTIND - 1))
-    [[ -z "$1" ]] && { echo "Usage: gitacp [-n] <subject> [body]"; return 1; }
+    [[ -z "$1" ]] && { echo "Usage: gitacp <subject> [body]"; return 1; }
 
     ( cd "$(gpwd)" || return 1
       _prek_installed
       gps && git add . && git commit -m "$1" ${2:+-m "$2"} && git push )
-}
-
-gitacp2() {
-    gitacp -n "$@"
 }
 
 # Usage: _git_category_prompt — asks for an MR category when none was given.
@@ -170,6 +163,7 @@ gmr() {
           git checkout -b "$branch" || return 1
       fi
 
+      _prek_installed
       _prek_stage_and_run || {
           echo "prek hooks failed — aborting before commit (still on branch '$branch')."
           return 1
