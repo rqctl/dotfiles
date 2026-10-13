@@ -128,7 +128,7 @@ _upgrade_gcloud() {
 }
 
 # Usage: upgrade
-# — apt, mise, omz, gcloud, in that order.
+# — apt, mise, gcloud, omz, in that order.
 upgrade() {
     local orig_dir="$PWD"
     # -n never prompts, so a broken sudo fails here rather than ten minutes in.
@@ -140,13 +140,14 @@ upgrade() {
 
     _upgrade_apt
     _upgrade_mise
-    _upgrade_omz
     _upgrade_gcloud
 
     source "$HOME/.zshrc.custom"
     cd "$orig_dir"
 
     print -P "\n%F{green}==> Upgrade complete%f"
+    # Last: a real update ends with `exec zsh`, which kills this function.
+    _upgrade_omz
 }
 
 
