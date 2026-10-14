@@ -240,6 +240,9 @@ for setting in "${GSETTINGS[@]}"; do
 done
 log "$GREEN" "✅ GNOME settings applied."
 
+# Monday as first day of week; GNOME ignores gsettings' org.gnome.system.locale region here
+sudo localectl set-locale LANG=en_US.UTF-8 LC_TIME=en_GB.UTF-8
+
 # Block Ubuntu's snap-transition firefox package — written unconditionally so re-runs fix a broken state
 sudo tee /etc/apt/preferences.d/firefox-deb-nosnap > /dev/null << 'EOF'
 Package: firefox*
