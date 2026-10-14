@@ -1,3 +1,17 @@
+# Simplicity is key
+
+My mojo, for every design, recommendation and implementation: the simplest
+option that meets the need wins. Simple is easy to remember, fast, and cheap
+to maintain.
+
+- Propose the simplest design first, without being asked. Don't offer the
+  elaborate version and wait for me to ask "is there a simpler way?".
+- Fewest moving parts: before adding a helper, file, option or wrapper, check
+  whether the logic can live in what already exists.
+- Drop optional or marginal extras instead of listing them. If a gain needs
+  ongoing vigilance to keep, say it isn't worth it.
+- I would rather not do something than maintain or remember something complex.
+
 # Writing for humans (MR/PR descriptions, commit messages, docs)
 
 Humans read these. Be concise, always. Lead with what changed and why it's

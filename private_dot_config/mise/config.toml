@@ -6,8 +6,6 @@ aws                                 = { symlink_bins = "true", version = "latest
 bat                                 = "latest"
 bun                                 = "latest"
 cargo-binstall                      = "latest"
-"cargo:flou/mrq"                    = "latest"
-"cargo:rqctl/gitdrift"              = "latest"
 "cargo:sofka"                       = "latest"
 chezmoi                             = "latest"
 cocogitto                           = "latest"
