@@ -203,7 +203,6 @@ log "$GREEN" "✅ Successfully installed apt packages."
 if ! dpkg -s libpam-fprintd &>/dev/null; then
     log "$BLUE" "\n➔ Configuring fingerprint authentication..."
     sudo apt-get install -y fprintd libpam-fprintd
-    sudo pam-auth-update --enable fprintd
     log "$GREEN" "✅ Fingerprint authentication configured."
 fi
 
