@@ -322,6 +322,7 @@ fi
 log "$BLUE" "\n➔ Installing VS Code extensions..."
 has_ext() { code --list-extensions 2>/dev/null | grep -qix "$1"; }
 for ext in "${VSCODE_EXTENSIONS[@]}"; do
+    echo "  $ext"
     # `code` can exit 0 without installing (marketplace hiccup): check, retry once.
     for _ in 1 2; do
         has_ext "$ext" || code --install-extension "$ext" >/dev/null 2>&1 || true
@@ -375,19 +376,20 @@ if ! command -v docker-credential-gcr &>/dev/null; then
     log "$GREEN" "✅ Successfully installed docker-credential-gcr."
 fi
 
-# Install vault-token-helper
+# Install vault-token-helper: fork of ilijamt/vault-token-helper with `list -e`
+# (upstream PR #25); built from source, no release carries it.
 if ! command -v vault-token-helper &>/dev/null; then
     log "$BLUE" "\n➔ Installing vault-token-helper..."
-    VERSION=0.3.7
-    curl -fsSL "https://github.com/joemiller/vault-token-helper/releases/download/v${VERSION}/vault-token-helper_${VERSION}_linux_amd64.tar.gz" \
-        | tar xz vault-token-helper
-    chmod +x vault-token-helper
-    sudo mv vault-token-helper /usr/local/bin/
+    src="$(mktemp -d)"
+    git clone --depth 1 https://github.com/rqctl/vault-token-helper.git "$src"
+    (cd "$src" && go build -o vault-token-helper ./cmd/vault-token-helper)
+    sudo install -m 0755 "$src/vault-token-helper" /usr/local/bin/vault-token-helper
+    rm -rf "$src"
     log "$GREEN" "✅ Successfully installed vault-token-helper."
 fi
 if ! grep -q 'vault-token-helper' "$HOME/.vault" 2>/dev/null; then
     log "$BLUE" "\n➔ Enabling vault-token-helper..."
-    vault-token-helper enable
+    vault-token-helper setup
     log "$GREEN" "✅ vault-token-helper enabled."
 fi
 
