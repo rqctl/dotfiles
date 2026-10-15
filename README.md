@@ -53,11 +53,11 @@ untouched; add the key and run `chezmoi apply`.
 **Backup**, before wiping the old PC (asks for sudo, then an archive passphrase):
 
 ```sh
-~/scripts/backup_pc.sh <usb-dir>       # -> <usb-dir>/pc-backup-<date>.tar.gz.gpg
+~/scripts/backup_before_reinstall.sh <usb-dir>       # -> <usb-dir>/pc-backup-<date>.tar.gz.gpg
 gpg -d <usb-dir>/pc-backup-<date>.tar.gz.gpg | tar -tz >/dev/null && echo OK   # verify
 ```
 
-The paths it covers are the `PATHS` list in `backup_pc.sh`. Git repos are not in it, and
+The paths it covers are the `PATHS` list in `backup_before_reinstall.sh`. Git repos are not in it, and
 the restore downloads this repo from GitHub: push this one and your others first.
 
 **Restore**, on the fresh install:
@@ -69,7 +69,7 @@ gpg --import ~/.gnupg-export/secret-keys.asc
 gpg --import-ownertrust ~/.gnupg-export/ownertrust.txt && rm -rf ~/.gnupg-export
 
 # 2. Everything else: Wi-Fi, packages, oh-my-zsh, mise, dotfiles, tools, git hooks
-wget -qO setup.sh https://raw.githubusercontent.com/rqctl/dotfiles/main/scripts/executable_custom_local_pc_setup.sh
+wget -qO setup.sh https://raw.githubusercontent.com/rqctl/dotfiles/main/scripts/executable_setup_fresh_install.sh
 bash setup.sh
 ```
 
@@ -82,7 +82,7 @@ Then reboot and follow the TODO list the script prints (also in `~/todo_*.txt`).
 script is safe to re-run.
 
 **Check the result**, and see everything the setup customizes, with
-`~/scripts/healthcheck.sh` (add `--backup` if you restored an archive). Each line is
+`~/scripts/verify_setup.sh` (add `--backup` if you restored an archive). Each line is
 one customization, marked ✓ or ✗; the package, extension and GNOME lists are read from
 the setup script.
 
@@ -98,7 +98,7 @@ sudo mokutil --import /var/lib/shim-signed/mok/MOK.der   # asks for a new one-ti
 
 ## Manual emergency backup (for control freaks)
 
-A full copy of `~` and `/etc` as one encrypted file, on top of `backup_pc.sh`. A single
+A full copy of `~` and `/etc` as one encrypted file, on top of `backup_before_reinstall.sh`. A single
 tar keeps permissions and symlinks, which an exFAT drive can't. Regenerable bulk and git
 repos are left out; adjust the excludes to taste.
 
@@ -125,7 +125,7 @@ gpg -d "$DEST"/full-backup-*.tar.gz.gpg | pigz -d | tar -t >/dev/null && echo OK
 
 ## Machine-local values
 
-Two files, never committed. `backup_pc.sh` includes both.
+Two files, never committed. `backup_before_reinstall.sh` includes both.
 
 | File | Holds |
 |---|---|
@@ -148,7 +148,7 @@ Set `isWork = false` on a personal machine to skip the work-only modules.
 
 Files holding credentials or connection secrets: SSH and GPG keys, kubeconfig, cloud
 CLI auth (`~/.aws/sso/`, `~/.config/gcloud/`), and tool tokens (`glab`, `argocd`).
-`backup_pc.sh` backs up some of them (see Backup and restore).
+`backup_before_reinstall.sh` backs up some of them (see Backup and restore).
 
 ## Git identity
 

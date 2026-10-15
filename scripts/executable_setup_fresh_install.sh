@@ -41,7 +41,7 @@ if [ ! -f "/etc/sudoers.d/$USERNAME" ]; then
     log "$GREEN" "✅ Passwordless sudo configured for $USERNAME."
 fi
 
-# Wi-Fi connections from the backup (see backup_pc.sh)
+# Wi-Fi connections from the backup (see backup_before_reinstall.sh)
 if [ -d "$HOME/.nm-export" ]; then
     sudo install -m 600 -o root -g root "$HOME"/.nm-export/90-NM-*.yaml /etc/netplan/
     sudo netplan generate
@@ -157,6 +157,14 @@ GSETTINGS=(
     "org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 30"
     "org.gnome.shell.extensions.dash-to-dock click-action 'focus-minimize-or-appspread'"
     "org.gnome.shell.extensions.dash-to-dock always-center-icons true"
+    "org.gnome.shell.extensions.dash-to-dock hotkeys-overlay false"
+    "org.gnome.shell.extensions.dash-to-dock apply-custom-theme true"
+    "org.gnome.shell.extensions.dash-to-dock background-opacity 0.8"
+    "org.gnome.shell.extensions.dash-to-dock height-fraction 0.9"
+    "org.gnome.shell.extensions.dash-to-dock isolate-monitors false"
+    "org.gnome.shell.extensions.dash-to-dock show-apps-at-top false"
+    "org.gnome.shell.extensions.dash-to-dock show-mounts-only-mounted true"
+    "org.gnome.shell.extensions.dash-to-dock shortcut-timeout 1.0"
     "org.gnome.shell.extensions.dash-to-dock show-trash false"
     "org.gnome.shell.extensions.dash-to-dock multi-monitor true"
     "org.gnome.shell.extensions.dash-to-dock isolate-workspaces true"

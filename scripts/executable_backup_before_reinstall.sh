@@ -1,6 +1,6 @@
 #!/bin/bash
 # Backs up what chezmoi and git can't restore into one passphrase-encrypted
-# archive. Usage: backup_pc.sh <dest-dir>. Restore steps: README, "Backup and restore".
+# archive. Usage: backup_before_reinstall.sh <dest-dir>. Restore steps: README, "Backup and restore".
 set -euo pipefail
 
 DEST="${1:?usage: $0 <destination-dir>}"

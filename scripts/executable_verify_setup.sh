@@ -1,10 +1,10 @@
 #!/bin/bash
-# Verifies a restore and lists what the setup does. Usage: healthcheck.sh [--backup]
-# (--backup: an archive was restored). The lists are read from custom_local_pc_setup.sh.
+# Verifies a restore and lists what the setup does. Usage: verify_setup.sh [--backup]
+# (--backup: an archive was restored). The lists are read from setup_fresh_install.sh.
 # shellcheck disable=SC2016,SC2088  # check strings are eval'd; "~" in labels is plain text
 set -u
 
-SETUP="$HOME/scripts/custom_local_pc_setup.sh"
+SETUP="$HOME/scripts/setup_fresh_install.sh"
 [ -f "$SETUP" ] || { echo "Missing $SETUP (run chezmoi apply)" >&2; exit 1; }
 
 SKIP=1
@@ -66,6 +66,11 @@ has_gsetting() {
     local schema key value cur
     read -r schema key value <<< "$1"
     cur=$(gsettings get "$schema" "$key" | sed -e 's/^@[a-z]* //' -e 's/^uint32 //')
+    # Doubles print with float noise (0.8 -> 0.80000000000000004): compare numerically.
+    if [[ "$cur" =~ ^[0-9.]+$ && "$value" =~ ^[0-9.]+$ ]]; then
+        awk -v a="$cur" -v b="$value" 'BEGIN { exit !(a - b < 1e-9 && b - a < 1e-9) }'
+        return
+    fi
     [ "$(tr -d ' []' <<< "$cur" | tr ',' '\n' | sort)" = "$(tr -d ' []' <<< "$value" | tr ',' '\n' | sort)" ]
 }
 
@@ -93,7 +98,7 @@ chk "Desktop Documents Music Notes Pictures Videos" \
     'for d in Desktop Documents Music Notes Pictures Videos; do [ -d ~/$d ] || exit 1; done'
 
 ARCHIVE=0
-section "Setup script (custom_local_pc_setup.sh)"
+section "Setup script (setup_fresh_install.sh)"
 
 sub "system"
 chk "passwordless sudo (/etc/sudoers.d/$USER)" 'sudo -n true && [ -f /etc/sudoers.d/$USER ]'

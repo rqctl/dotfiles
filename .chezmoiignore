@@ -6,7 +6,7 @@ docs/**
 # Machine-local tokens, never versioned.
 .zshrc.local
 
-# Upstream clones and superseded backups, installed by custom_local_pc_setup.sh.
+# Upstream clones and superseded backups, installed by setup_fresh_install.sh.
 .oh-my-zsh/custom/plugins
 .oh-my-zsh/custom/plugins/**
 .oh-my-zsh/custom/themes
