@@ -81,6 +81,16 @@ run `DOTFILES_REPO=you/dotfiles bash setup.sh`.
 Then reboot and follow the TODO list the script prints (also in `~/todo_*.txt`). The
 script is safe to re-run.
 
+**Secure Boot:** the first reboot may show a blue "Perform MOK management" screen: a
+DKMS driver (DisplayLink) queued a signing key, and without it the module stays
+blocked. Choose *Enroll MOK*, *Continue*, *Yes*, then the one-time password set when
+the key was queued. Forgot it? *Continue boot*, then queue a new key and reboot:
+
+```sh
+sudo update-secureboot-policy --new-key
+sudo mokutil --import /var/lib/shim-signed/mok/MOK.der   # asks for a new one-time password
+```
+
 ## Manual emergency backup (for control freaks)
 
 A full copy of `~` and `/etc` as one encrypted file, on top of `backup_pc.sh`. A single

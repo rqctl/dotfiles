@@ -157,6 +157,10 @@ GSETTINGS=(
     "org.gnome.shell.extensions.dash-to-dock dock-position 'BOTTOM'"
     "org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 30"
     "org.gnome.shell.extensions.dash-to-dock click-action 'focus-minimize-or-appspread'"
+    "org.gnome.shell.extensions.dash-to-dock always-center-icons true"
+    "org.gnome.shell.extensions.dash-to-dock show-trash false"
+    "org.gnome.shell.extensions.dash-to-dock multi-monitor true"
+    "org.gnome.shell.extensions.dash-to-dock isolate-workspaces true"
     "org.gnome.shell favorite-apps ['firefox.desktop', 'com.mitchellh.ghostty.desktop', 'com.microsoft.VSCode.desktop', 'spotify.desktop', 'slack.desktop']"
     "org.gnome.shell enabled-extensions ['ding@rastersoft.com', 'ubuntu-dock@ubuntu.com', 'tiling-assistant@ubuntu.com', 'ubuntu-appindicators@ubuntu.com', 'azwallpaper@azwallpaper.gitlab.com', 'steal-my-focus-window@steal-my-focus-window', 'unblank@sun.wxg@gmail.com']"
 )
@@ -263,6 +267,8 @@ for setting in "${GSETTINGS[@]}"; do
     read -r schema key value <<< "$setting"
     gsettings set "$schema" "$key" "$value" || log "$YELLOW" "⚠ gsettings $schema $key failed (schema gone on this release?)"
 done
+# dconf, not gsettings: the extension's schema isn't installed system-wide.
+dconf write /org/gnome/shell/extensions/azwallpaper/slideshow-directory "'$HOME/Pictures/Slideshow'"
 log "$GREEN" "✅ GNOME settings applied."
 
 # Monday as first day of week; GNOME ignores gsettings' org.gnome.system.locale region here
