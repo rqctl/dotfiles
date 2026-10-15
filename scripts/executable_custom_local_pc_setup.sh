@@ -47,7 +47,6 @@ APT_PACKAGES=(
     ca-certificates         # SSL certificates
     dconf-editor            # GNOME settings browser
     filezilla               # FTP/SFTP client
-    flatpak                 # Stremio
     ghostty                 # GPU-accelerated terminal emulator
     git                     # version control system
     gnome-shell-extensions  # GNOME desktop extensions
@@ -203,18 +202,6 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     log "$GREEN" "✅ Successfully installed Oh My Zsh and plugins."
 fi
 
-# Nerd Font used by powerlevel10k and ghostty (the prompt shows boxes without it)
-if [ ! -f "$HOME/.local/share/fonts/MesloLGS NF Regular.ttf" ]; then
-    log "$BLUE" "\n➔ Installing MesloLGS NF font..."
-    mkdir -p "$HOME/.local/share/fonts"
-    for style in Regular Bold Italic "Bold Italic"; do
-        curl -fsSL -o "$HOME/.local/share/fonts/MesloLGS NF $style.ttf" \
-            "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20${style// /%20}.ttf"
-    done
-    fc-cache -f
-    log "$GREEN" "✅ Successfully installed MesloLGS NF."
-fi
-
 # Before the dotfiles: the installer rewrites ~/.claude/settings.json, chezmoi's copy must win.
 log "$BLUE" "\n➔ Installing Claude Code..."
 if [ ! -f "$HOME/.local/bin/claude" ]; then
@@ -366,26 +353,6 @@ if [ ! -f /etc/apt/sources.list.d/1password.list ]; then
     log "$GREEN" "✅ Successfully installed 1Password."
 fi
 
-# Install Confluent CLI
-if [ ! -f /etc/apt/sources.list.d/confluent-cli.list ]; then
-    log "$BLUE" "\n➔ Installing Confluent CLI..."
-    curl -fsSL https://packages.confluent.io/confluent-cli/deb/archive.key \
-        | sudo gpg --yes --dearmor --output /etc/apt/keyrings/confluent-cli.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/confluent-cli.gpg] https://packages.confluent.io/confluent-cli/deb stable main" \
-        | sudo tee /etc/apt/sources.list.d/confluent-cli.list
-    sudo apt-get update
-    sudo apt-get install -y confluent-cli
-    log "$GREEN" "✅ Successfully installed Confluent CLI."
-fi
-
-# Install Stremio
-if ! flatpak info com.stremio.Stremio &>/dev/null; then
-    log "$BLUE" "\n➔ Installing Stremio..."
-    sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-    sudo flatpak install -y flathub com.stremio.Stremio
-    log "$GREEN" "✅ Successfully installed Stremio."
-fi
-
 # Install docker-credential-gcr
 if ! command -v docker-credential-gcr &>/dev/null; then
     log "$BLUE" "\n➔ Installing docker-credential-gcr..."
@@ -518,11 +485,6 @@ TODO_ITEMS=(
     "=== ACTIONS ==="
     "[ ] Enroll fingerprint: fprintd-enroll"
     "[ ] Reboot to activate the DisplayLink driver and handle the Docker group membership change"
-    ""
-    "=== SIGN IN (not in the backup) ==="
-    "[ ] gcloud auth login && gcloud auth application-default login"
-    "[ ] 1Password, Slack, Spotify, Stremio, VS Code (GitLab, Claude)"
-    "[ ] Vault: login_vault"
     ""
     "=== REPOS ==="
     "[ ] Clone GitLab repos: ghorgca (ghorg); GitHub ones go in ~/github"
