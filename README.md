@@ -54,6 +54,7 @@ untouched; add the key and run `chezmoi apply`.
 
 ```sh
 ~/scripts/backup_pc.sh <usb-dir>       # -> <usb-dir>/pc-backup-<date>.tar.gz.gpg
+gpg -d <usb-dir>/pc-backup-<date>.tar.gz.gpg | tar -tz >/dev/null && echo OK   # verify
 ```
 
 The paths it covers are the `PATHS` list in `backup_pc.sh`. Git repos are not in it, and
