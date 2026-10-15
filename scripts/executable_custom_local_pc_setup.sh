@@ -44,7 +44,8 @@ fi
 # Wi-Fi connections from the backup (see backup_pc.sh)
 if [ -d "$HOME/.nm-export" ]; then
     sudo install -m 600 -o root -g root "$HOME"/.nm-export/90-NM-*.yaml /etc/netplan/
-    sudo netplan apply
+    sudo netplan generate
+    sudo nmcli connection reload
     rm -rf "$HOME/.nm-export"
 fi
 
