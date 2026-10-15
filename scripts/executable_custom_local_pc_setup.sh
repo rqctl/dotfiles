@@ -15,6 +15,7 @@ NC='\033[0m' # No Color
 USERNAME="$(whoami)"
 DOCKER_CONFIG_FILE="$HOME/.docker/config.json"
 REGISTRY="europe-docker.pkg.dev"
+DOTFILES_REPO="${DOTFILES_REPO:-rqctl/dotfiles}" # GitHub owner/name, override to use a fork
 
 log() {
     local color="$1"
@@ -227,8 +228,8 @@ export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
 [ -f "$HOME/.zshrc.local" ] && . "$HOME/.zshrc.local"
 if [ ! -d "$HOME/.local/share/chezmoi/.git" ]; then
     # HTTPS needs no SSH key yet; the remote switches to SSH for pushing.
-    mise exec chezmoi -- chezmoi init --apply --force https://github.com/rqctl/dotfiles.git
-    git -C "$HOME/.local/share/chezmoi" remote set-url origin git@github.com:rqctl/dotfiles.git
+    mise exec chezmoi -- chezmoi init --apply --force "https://github.com/$DOTFILES_REPO.git"
+    git -C "$HOME/.local/share/chezmoi" remote set-url origin "git@github.com:$DOTFILES_REPO.git"
 fi
 # GITLAB_TOKEN is for the self-hosted GitLab: mise would send it to gitlab.com for glab (401).
 GITLAB_TOKEN='' mise install

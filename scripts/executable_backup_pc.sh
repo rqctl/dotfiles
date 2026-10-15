@@ -15,16 +15,9 @@ PATHS=(
     .zsh_history
     .config/chezmoi/chezmoi.toml
     .kube
-    .aws
-    .azure
-    .confluent
-    .vault-tokens
-    .docker/config.json
+    .aws/config
     .config/mozilla
-    .terraform.d/credentials.tfrc.json
-    .claude.json
     .mcp.json
-    .claude/history.jsonl
     scripts
     vscode
     Desktop

@@ -56,30 +56,56 @@ untouched; add the key and run `chezmoi apply`.
 ~/scripts/backup_pc.sh <usb-dir>       # -> <usb-dir>/pc-backup-<date>.tar.gz.gpg
 ```
 
-The archive holds what git can't: `chezmoi.toml`, `.zshrc.local`, SSH/GPG keys, Wi-Fi
-passwords, kube/aws/azure/confluent/vault/docker/terraform credentials, Firefox
-profile, zsh history, Claude memories/config/history, `~/scripts`, `~/vscode`, and
-Desktop, Documents, Music, Notes, Pictures, Videos. Push your repos first: git
-repos (`~/github`, `~/gitlab`, `~/src`) are not in it.
+The paths it covers are the `PATHS` list in `backup_pc.sh`. Git repos are not in it, and
+the restore downloads this repo from GitHub: push this one and your others first.
 
-**Restore**, on the fresh install (push this repo first: step 2 downloads from GitHub):
+**Restore**, on the fresh install:
 
 ```sh
-# 1. Archive: restores the files, then import the GPG keys
+# 1. Archive (asks for the passphrase typed at backup time, no key involved), then GPG keys
 gpg -d pc-backup-*.tar.gz.gpg | tar -xz -C ~
 gpg --import ~/.gnupg-export/secret-keys.asc
 gpg --import-ownertrust ~/.gnupg-export/ownertrust.txt && rm -rf ~/.gnupg-export
-#    No archive? Start from docs/chezmoi.toml.example and dot_zshrc.local.example.
 
 # 2. Everything else: Wi-Fi, packages, oh-my-zsh, mise, dotfiles, tools, git hooks
 wget -qO setup.sh https://raw.githubusercontent.com/rqctl/dotfiles/main/scripts/executable_custom_local_pc_setup.sh
 bash setup.sh
 ```
 
-Then reboot and follow the TODO list the script prints (also saved as `~/todo_*.txt`).
-The script is safe to re-run; the applied copy is `~/scripts/custom_local_pc_setup.sh`.
-Not restored: gcloud, glab and argocd logins, Slack, 1Password, GNOME keyring; sign in
-when needed.
+**Without an archive** (a colleague, or a PC you start clean): skip step 1. Copy
+`docs/chezmoi.toml.example` to `~/.config/chezmoi/chezmoi.toml` and fill it in, then run
+step 2. `~/.zshrc.local` is optional (`dot_zshrc.local.example`). To use your own fork,
+run `DOTFILES_REPO=you/dotfiles bash setup.sh`.
+
+Then reboot and follow the TODO list the script prints (also in `~/todo_*.txt`). The
+script is safe to re-run.
+
+## Manual emergency backup (for control freaks)
+
+A full copy of `~` and `/etc` as one encrypted file, on top of `backup_pc.sh`. A single
+tar keeps permissions and symlinks, which an exFAT drive can't. Regenerable bulk and git
+repos are left out; adjust the excludes to taste.
+
+```sh
+MEDIA=White                            # label of the external drive
+DEST=/run/media/$USER/$MEDIA
+H=${HOME#/}                            # home path without the leading /
+
+sudo true && sudo tar -C / -cpf - \
+    --exclude=$H/github --exclude=$H/gitlab \
+    --exclude=$H/.cache --exclude=$H/.local/share/Trash --exclude=$H/.local/share/mise \
+    --exclude=$H/go --exclude=$H/.rustup --exclude=$H/.cargo --exclude=$H/.npm \
+    --exclude=$H/.var \
+    $H etc \
+  | pigz | gpg --symmetric --cipher-algo AES256 -o "$DEST/full-backup-$(date +%Y%m%d).tar.gz.gpg"
+```
+
+Look inside, or extract somewhere:
+
+```sh
+gpg -d "$DEST"/full-backup-*.tar.gz.gpg | pigz -d | tar -t | less
+gpg -d "$DEST"/full-backup-*.tar.gz.gpg | pigz -d | sudo tar -xp -C /some/dir
+```
 
 ## Machine-local values
 
