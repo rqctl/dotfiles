@@ -64,7 +64,7 @@ the restore downloads this repo from GitHub: push this one and your others first
 
 ```sh
 # 1. Archive (asks for the passphrase typed at backup time, no key involved), then GPG keys
-gpg -d pc-backup-*.tar.gz.gpg | tar -xz -C ~
+gpg -d <usb-dir>/pc-backup-<date>.tar.gz.gpg | tar -xz -C ~
 gpg --import ~/.gnupg-export/secret-keys.asc
 gpg --import-ownertrust ~/.gnupg-export/ownertrust.txt && rm -rf ~/.gnupg-export
 
