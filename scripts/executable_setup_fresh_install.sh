@@ -65,6 +65,7 @@ APT_PACKAGES=(
     ksnip
     lftp                    # scriptable FTP/SFTP client
     libffi-dev              # shared library for language bindings
+    libssl3t64              # OpenSSL 3, needed by VS Code's extension signature check
     libyaml-dev             # YAML parser library headers
     locate                  # fast file search utility
     mtr                     # traceroute + ping
