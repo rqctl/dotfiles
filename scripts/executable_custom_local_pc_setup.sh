@@ -493,6 +493,7 @@ TODO_ITEMS=(
     "=== ACTIONS ==="
     "[ ] Enroll fingerprint: fprintd-enroll"
     "[ ] Reboot to activate the DisplayLink driver and handle the Docker group membership change"
+    "[ ] After the reboot, in a new terminal: upgrade (apt, mise, gcloud, oh-my-zsh)"
     ""
     "=== REPOS ==="
     "[ ] Clone GitLab repos: ghorgca (ghorg); GitHub ones go in ~/github"
