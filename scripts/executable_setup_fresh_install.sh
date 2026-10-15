@@ -171,6 +171,8 @@ GSETTINGS=(
     "org.gnome.shell.extensions.dash-to-dock isolate-workspaces true"
     "org.gnome.shell favorite-apps ['firefox.desktop', 'com.mitchellh.ghostty.desktop', 'com.microsoft.VSCode.desktop', 'spotify.desktop', 'slack.desktop']"
     "org.gnome.shell enabled-extensions ['ubuntu-dock@ubuntu.com', 'tiling-assistant@ubuntu.com', 'ubuntu-appindicators@ubuntu.com', 'azwallpaper@azwallpaper.gitlab.com', 'steal-my-focus-window@steal-my-focus-window', 'unblank@sun.wxg@gmail.com']"
+    # DING is force-enabled by /usr/share/gnome-shell/modes/ubuntu.json; only this list overrides it.
+    "org.gnome.shell disabled-extensions ['ding@rastersoft.com']"
 )
 
 # Update REQUIRED apt and install packages
