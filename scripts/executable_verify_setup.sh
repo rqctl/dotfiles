@@ -88,6 +88,7 @@ chk "~/.config/chezmoi/chezmoi.toml and ~/.zshrc.local" \
     '[ -f ~/.config/chezmoi/chezmoi.toml ] && [ -f ~/.zshrc.local ]'
 chk "kubeconfigs (~/.kube) and ~/.aws/config" '[ -f ~/.kube/config ] && [ -f ~/.aws/config ]'
 chk "~/.mcp.json" 'has_file ~/.mcp.json'
+chk "FileZilla saved sites (~/.config/filezilla)" 'has_file ~/.config/filezilla/sitemanager.xml'
 sub "history, profile and memory"
 chk "zsh history" '[ -s ~/.zsh_history ]'
 chk "Firefox profile (~/.config/mozilla)" 'ls -d ~/.config/mozilla/firefox/*.default* '

@@ -17,6 +17,7 @@ PATHS=(
     .kube
     .aws/config
     .config/mozilla
+    .config/filezilla
     .mcp.json
     scripts
     vscode
