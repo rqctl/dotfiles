@@ -102,11 +102,10 @@ sudo true && sudo tar -C / -cpf - \
 sync                                    # flush to the drive before unplugging
 ```
 
-Look inside, or extract somewhere:
+Verify it:
 
 ```sh
-gpg -d "$DEST"/full-backup-*.tar.gz.gpg | pigz -d | tar -t | less
-gpg -d "$DEST"/full-backup-*.tar.gz.gpg | pigz -d | sudo tar -xp -C /some/dir
+gpg -d "$DEST"/full-backup-*.tar.gz.gpg | pigz -d | tar -t >/dev/null && echo OK
 ```
 
 ## Machine-local values
