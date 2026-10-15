@@ -48,26 +48,38 @@ spacing). It cannot clean what was already pushed: that stays in GitHub's histor
 A `{{ .key }}` that isn't declared yet makes the apply fail and leaves the file in `~`
 untouched; add the key and run `chezmoi apply`.
 
-## New machine
+## Backup and restore
 
-Before wiping the old one: `~/scripts/backup_pc.sh <usb-dir>` (secrets, zsh history,
-Claude memories, personal folders, in one passphrase-encrypted archive).
+**Backup**, before wiping the old PC (asks for sudo, then an archive passphrase):
 
 ```sh
-# 1. Restore the backup archive (holds chezmoi.toml and .zshrc.local), then GPG keys
+~/scripts/backup_pc.sh <usb-dir>       # -> <usb-dir>/pc-backup-<date>.tar.gz.gpg
+```
+
+The archive holds what git can't: `chezmoi.toml`, `.zshrc.local`, SSH/GPG keys, Wi-Fi
+passwords, kube/aws/azure/confluent/vault/docker/terraform credentials, Firefox
+profile, zsh history, Claude memories/config/history, `~/scripts`, `~/vscode`, and
+Desktop, Documents, Music, Notes, Pictures, Videos. Push your repos first: git
+repos (`~/github`, `~/gitlab`, `~/src`) are not in it.
+
+**Restore**, on the fresh install (push this repo first: step 2 downloads from GitHub):
+
+```sh
+# 1. Archive: restores the files, then import the GPG keys
 gpg -d pc-backup-*.tar.gz.gpg | tar -xz -C ~
 gpg --import ~/.gnupg-export/secret-keys.asc
 gpg --import-ownertrust ~/.gnupg-export/ownertrust.txt && rm -rf ~/.gnupg-export
 #    No archive? Start from docs/chezmoi.toml.example and dot_zshrc.local.example.
 
-# 2. Everything else: packages, oh-my-zsh, mise, dotfiles, mise tools, git hooks
+# 2. Everything else: Wi-Fi, packages, oh-my-zsh, mise, dotfiles, tools, git hooks
 wget -qO setup.sh https://raw.githubusercontent.com/rqctl/dotfiles/main/scripts/executable_custom_local_pc_setup.sh
 bash setup.sh
 ```
 
-The script installs mise, which runs chezmoi once to apply the dotfiles; the mise
-config they bring then installs every tool, chezmoi included. It is safe to re-run:
-the applied copy lives at `~/scripts/custom_local_pc_setup.sh`.
+Then reboot and follow the TODO list the script prints (also saved as `~/todo_*.txt`).
+The script is safe to re-run; the applied copy is `~/scripts/custom_local_pc_setup.sh`.
+Not restored: gcloud, glab and argocd logins, Slack, 1Password, GNOME keyring; sign in
+when needed.
 
 ## Machine-local values
 
@@ -94,7 +106,7 @@ Set `isWork = false` on a personal machine to skip the work-only modules.
 
 Files holding credentials or connection secrets: SSH and GPG keys, kubeconfig, cloud
 CLI auth (`~/.aws/sso/`, `~/.config/gcloud/`), and tool tokens (`glab`, `argocd`).
-`backup_pc.sh` backs them up (see New machine).
+`backup_pc.sh` backs up some of them (see Backup and restore).
 
 ## Git identity
 

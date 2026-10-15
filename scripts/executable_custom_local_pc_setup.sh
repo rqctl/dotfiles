@@ -40,6 +40,13 @@ if [ ! -f "/etc/sudoers.d/$USERNAME" ]; then
     log "$GREEN" "✅ Passwordless sudo configured for $USERNAME."
 fi
 
+# Wi-Fi connections from the backup (see backup_pc.sh)
+if [ -d "$HOME/.nm-export" ]; then
+    sudo install -m 600 -o root -g root "$HOME"/.nm-export/90-NM-*.yaml /etc/netplan/
+    sudo netplan apply
+    rm -rf "$HOME/.nm-export"
+fi
+
 # List of apt packages to install
 APT_PACKAGES=(
     bd                      # jump back to a parent directory

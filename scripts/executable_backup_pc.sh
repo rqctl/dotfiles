@@ -10,6 +10,7 @@ DEST="${1:?usage: $0 <destination-dir>}"
 PATHS=(
     .ssh
     .gnupg-export
+    .nm-export
     .zshrc.local
     .zsh_history
     .config/chezmoi/chezmoi.toml
@@ -19,14 +20,13 @@ PATHS=(
     .confluent
     .vault-tokens
     .docker/config.json
-    .config/argocd/config
-    .config/glab-cli/config.yml
     .config/mozilla
     .terraform.d/credentials.tfrc.json
     .claude.json
     .mcp.json
     .claude/history.jsonl
     scripts
+    vscode
     Desktop
     Documents
     Music
@@ -38,14 +38,18 @@ PATHS=(
 cd "$HOME"
 
 # Exported keys restore cleanly on another gpg version; a copy of ~/.gnupg may not.
-rm -rf .gnupg-export
-mkdir -m 700 .gnupg-export
-trap 'rm -rf "$HOME/.gnupg-export"' EXIT
+rm -rf .gnupg-export .nm-export
+mkdir -m 700 .gnupg-export .nm-export
+trap 'rm -rf "$HOME/.gnupg-export" "$HOME/.nm-export"' EXIT
 gpg --export-secret-keys --armor > .gnupg-export/secret-keys.asc
 gpg --export-ownertrust > .gnupg-export/ownertrust.txt
 
 # One memory dir per Claude project; they only match again at the same paths.
 for m in .claude/projects/*/memory; do PATHS+=("$m"); done
+
+# Wi-Fi passwords: NetworkManager keeps them in root-only netplan files.
+sudo cp /etc/netplan/90-NM-*.yaml .nm-export/
+sudo chown -R "$USER:" .nm-export
 
 existing=()
 for p in "${PATHS[@]}"; do
