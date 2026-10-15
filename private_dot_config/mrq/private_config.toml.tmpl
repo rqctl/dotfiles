@@ -170,6 +170,7 @@ name = "In Review"
 scope = "instance"
 labels = ["sre-review::ask"]
 has_reviewer = true
+# exclude review_requested
 
 [[filter]]
 name = "Mine"
@@ -177,14 +178,10 @@ scope = "authored"
 state = "all"
 
 [[filter]]
-name = "Assigned to me"
-scope = "assigned"
+name = "Participation"
+scope = ["review_requested", "assigned"]
 state = "all"
-
-[[filter]]
-name = "To Review"
-scope = "review_requested"
-state = "all"
+# exclude authored
 
 [[filter]]
 name = "🟢 Merged ship"
