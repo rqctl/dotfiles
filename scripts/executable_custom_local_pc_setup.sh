@@ -51,7 +51,6 @@ fi
 
 # List of apt packages to install
 APT_PACKAGES=(
-    bd                      # jump back to a parent directory
     build-essential         # essential compilation tools
     ca-certificates         # SSL certificates
     dconf-editor            # GNOME settings browser
@@ -162,7 +161,7 @@ GSETTINGS=(
     "org.gnome.shell.extensions.dash-to-dock multi-monitor true"
     "org.gnome.shell.extensions.dash-to-dock isolate-workspaces true"
     "org.gnome.shell favorite-apps ['firefox.desktop', 'com.mitchellh.ghostty.desktop', 'com.microsoft.VSCode.desktop', 'spotify.desktop', 'slack.desktop']"
-    "org.gnome.shell enabled-extensions ['ding@rastersoft.com', 'ubuntu-dock@ubuntu.com', 'tiling-assistant@ubuntu.com', 'ubuntu-appindicators@ubuntu.com', 'azwallpaper@azwallpaper.gitlab.com', 'steal-my-focus-window@steal-my-focus-window', 'unblank@sun.wxg@gmail.com']"
+    "org.gnome.shell enabled-extensions ['ubuntu-dock@ubuntu.com', 'tiling-assistant@ubuntu.com', 'ubuntu-appindicators@ubuntu.com', 'azwallpaper@azwallpaper.gitlab.com', 'steal-my-focus-window@steal-my-focus-window', 'unblank@sun.wxg@gmail.com']"
 )
 
 # Update REQUIRED apt and install packages
@@ -206,10 +205,8 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     git clone https://github.com/romkatv/powerlevel10k.git "$HOME/.oh-my-zsh/themes/powerlevel10k"
     ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-    git clone https://github.com/jkavan/terragrunt-oh-my-zsh-plugin.git "$ZSH_CUSTOM/plugins/terragrunt"
     git clone https://github.com/MichaelAquilina/zsh-you-should-use.git "$ZSH_CUSTOM/plugins/you-should-use"
     git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-    git clone https://github.com/fdellwing/zsh-bat.git "$ZSH_CUSTOM/plugins/zsh-bat"
     git clone https://github.com/zsh-users/zsh-history-substring-search "$ZSH_CUSTOM/plugins/zsh-history-substring-search"
     git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
     log "$GREEN" "✅ Successfully installed Oh My Zsh and plugins."

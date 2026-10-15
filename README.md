@@ -81,6 +81,11 @@ run `DOTFILES_REPO=you/dotfiles bash setup.sh`.
 Then reboot and follow the TODO list the script prints (also in `~/todo_*.txt`). The
 script is safe to re-run.
 
+**Check the result**, and see everything the setup customizes, with
+`~/scripts/healthcheck.sh` (add `--backup` if you restored an archive). Each line is
+one customization, marked ✓ or ✗; the package, extension and GNOME lists are read from
+the setup script.
+
 **Secure Boot:** the first reboot may show a blue "Perform MOK management" screen: a
 DKMS driver (DisplayLink) queued a signing key, and without it the module stays
 blocked. Choose *Enroll MOK*, *Continue*, *Yes*, then the one-time password set when
