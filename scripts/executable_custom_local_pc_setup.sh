@@ -47,6 +47,7 @@ APT_PACKAGES=(
     ca-certificates         # SSL certificates
     dconf-editor            # GNOME settings browser
     filezilla               # FTP/SFTP client
+    flatpak                 # Stremio
     ghostty                 # GPU-accelerated terminal emulator
     git                     # version control system
     gnome-shell-extensions  # GNOME desktop extensions
@@ -69,6 +70,7 @@ APT_PACKAGES=(
     shellcheck              # shell script static analysis
     tcptraceroute           # traceroute over TCP
     tig                     # text-mode interface for git
+    tmux                    # terminal multiplexer
     tree                    # recursive directory listing
     tshark                  # Wireshark command line
     vim                     # text editor
@@ -132,6 +134,21 @@ GSETTINGS=(
     "org.gnome.mutter workspaces-only-on-primary false"
     "org.gnome.mutter.keybindings toggle-tiled-left []"
     "org.gnome.mutter.keybindings toggle-tiled-right []"
+    "org.gnome.desktop.calendar show-weekdate true"
+    "org.gnome.desktop.peripherals.keyboard numlock-state true"
+    "org.gnome.desktop.session idle-delay 0"
+    "org.gnome.desktop.sound event-sounds false"
+    "org.gnome.desktop.wm.keybindings show-desktop ['<Super>d']"
+    "org.gnome.settings-daemon.plugins.media-keys home ['<Super>e']"
+    "org.gnome.settings-daemon.plugins.media-keys mic-mute ['<Control><Alt>Pause']"
+    "org.gnome.settings-daemon.plugins.media-keys terminal []"
+    "org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 3600"
+    "org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1800"
+    "org.gnome.shell.app-switcher current-workspace-only true"
+    "org.gnome.nautilus.preferences default-folder-viewer 'list-view'"
+    "org.gnome.shell.extensions.dash-to-dock dock-position 'BOTTOM'"
+    "org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 30"
+    "org.gnome.shell.extensions.dash-to-dock click-action 'focus-minimize-or-appspread'"
     "org.gnome.shell favorite-apps ['firefox.desktop', 'com.mitchellh.ghostty.desktop', 'com.microsoft.VSCode.desktop', 'spotify.desktop', 'slack.desktop']"
     "org.gnome.shell enabled-extensions ['ding@rastersoft.com', 'ubuntu-dock@ubuntu.com', 'tiling-assistant@ubuntu.com', 'ubuntu-appindicators@ubuntu.com', 'azwallpaper@azwallpaper.gitlab.com', 'steal-my-focus-window@steal-my-focus-window', 'unblank@sun.wxg@gmail.com']"
 )
@@ -186,6 +203,18 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     log "$GREEN" "✅ Successfully installed Oh My Zsh and plugins."
 fi
 
+# Nerd Font used by powerlevel10k and ghostty (the prompt shows boxes without it)
+if [ ! -f "$HOME/.local/share/fonts/MesloLGS NF Regular.ttf" ]; then
+    log "$BLUE" "\n➔ Installing MesloLGS NF font..."
+    mkdir -p "$HOME/.local/share/fonts"
+    for style in Regular Bold Italic "Bold Italic"; do
+        curl -fsSL -o "$HOME/.local/share/fonts/MesloLGS NF $style.ttf" \
+            "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20${style// /%20}.ttf"
+    done
+    fc-cache -f
+    log "$GREEN" "✅ Successfully installed MesloLGS NF."
+fi
+
 # Before the dotfiles: the installer rewrites ~/.claude/settings.json, chezmoi's copy must win.
 log "$BLUE" "\n➔ Installing Claude Code..."
 if [ ! -f "$HOME/.local/bin/claude" ]; then
@@ -236,7 +265,7 @@ log "$GREEN" "✅ GNOME extensions installed."
 log "$BLUE" "\n➔ Applying GNOME settings..."
 for setting in "${GSETTINGS[@]}"; do
     read -r schema key value <<< "$setting"
-    gsettings set "$schema" "$key" "$value"
+    gsettings set "$schema" "$key" "$value" || log "$YELLOW" "⚠ gsettings $schema $key failed (schema gone on this release?)"
 done
 log "$GREEN" "✅ GNOME settings applied."
 
@@ -335,6 +364,26 @@ if [ ! -f /etc/apt/sources.list.d/1password.list ]; then
     sudo apt-get update
     sudo apt-get install -y 1password
     log "$GREEN" "✅ Successfully installed 1Password."
+fi
+
+# Install Confluent CLI
+if [ ! -f /etc/apt/sources.list.d/confluent-cli.list ]; then
+    log "$BLUE" "\n➔ Installing Confluent CLI..."
+    curl -fsSL https://packages.confluent.io/confluent-cli/deb/archive.key \
+        | sudo gpg --yes --dearmor --output /etc/apt/keyrings/confluent-cli.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/confluent-cli.gpg] https://packages.confluent.io/confluent-cli/deb stable main" \
+        | sudo tee /etc/apt/sources.list.d/confluent-cli.list
+    sudo apt-get update
+    sudo apt-get install -y confluent-cli
+    log "$GREEN" "✅ Successfully installed Confluent CLI."
+fi
+
+# Install Stremio
+if ! flatpak info com.stremio.Stremio &>/dev/null; then
+    log "$BLUE" "\n➔ Installing Stremio..."
+    sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    sudo flatpak install -y flathub com.stremio.Stremio
+    log "$GREEN" "✅ Successfully installed Stremio."
 fi
 
 # Install docker-credential-gcr
@@ -470,14 +519,14 @@ TODO_ITEMS=(
     "[ ] Enroll fingerprint: fprintd-enroll"
     "[ ] Reboot to activate the DisplayLink driver and handle the Docker group membership change"
     ""
-    "=== RESTORE FROM BACKUP (secrets and data — not in the dotfiles repo) ==="
-    "[ ] ~/.ssh/ (private keys — remember to chmod 600)"
-    "[ ] ~/.gnupg/ (GPG keys for commit signing)"
-    "[ ] ~/.kube/config (cluster contexts)"
-    "[ ] ~/.aws/sso/ (SSO cache)"
-    "[ ] ~/.config/glab-cli/config.yml and ~/.config/argocd/config (tokens)"
-    "[ ] ~/.mozilla/ or sign in to Firefox account"
-    "[ ] ~/Documents/, ~/Pictures/ and other user data"
+    "=== SIGN IN (not in the backup) ==="
+    "[ ] gcloud auth login && gcloud auth application-default login"
+    "[ ] 1Password, Slack, Spotify, Stremio, VS Code (GitLab, Claude)"
+    "[ ] Vault: login_vault"
+    ""
+    "=== REPOS ==="
+    "[ ] Clone GitLab repos: ghorgca (ghorg); GitHub ones go in ~/github"
+    "[ ] cargo install --path ~/github/mrq --path ~/github/gitdrift"
 )
 
 {

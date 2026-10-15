@@ -6,9 +6,6 @@ set -euo pipefail
 DEST="${1:?usage: $0 <destination-dir>}"
 [ -d "$DEST" ] || { echo "Not a directory: $DEST" >&2; exit 1; }
 
-# Claude names a project dir after its path, with every / replaced by -.
-CLAUDE_PROJECTS=".claude/projects/${HOME//\//-}"
-
 # Relative to $HOME.
 PATHS=(
     .ssh
@@ -22,8 +19,14 @@ PATHS=(
     .confluent
     .vault-tokens
     .docker/config.json
-    "$CLAUDE_PROJECTS/memory"
-    "$CLAUDE_PROJECTS-gitlab-idp-resource-plane-infra-core/memory"
+    .config/argocd/config
+    .config/glab-cli/config.yml
+    .config/mozilla
+    .terraform.d/credentials.tfrc.json
+    .claude.json
+    .mcp.json
+    .claude/history.jsonl
+    scripts
     Desktop
     Documents
     Music
@@ -40,6 +43,9 @@ mkdir -m 700 .gnupg-export
 trap 'rm -rf "$HOME/.gnupg-export"' EXIT
 gpg --export-secret-keys --armor > .gnupg-export/secret-keys.asc
 gpg --export-ownertrust > .gnupg-export/ownertrust.txt
+
+# One memory dir per Claude project; they only match again at the same paths.
+for m in .claude/projects/*/memory; do PATHS+=("$m"); done
 
 existing=()
 for p in "${PATHS[@]}"; do
