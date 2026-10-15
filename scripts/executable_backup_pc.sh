@@ -53,4 +53,7 @@ out="$DEST/pc-backup-$(date +%Y%m%d-%H%M).tar.gz.gpg"
 tar -c -I pigz --exclude=.kube/cache "${existing[@]}" \
     | gpg --symmetric --cipher-algo AES256 -o "$out"
 
+# Flush to the drive, or an unplug right after could leave a partial file.
+sync
+
 echo "✅ $out ($(du -h "$out" | cut -f1))"

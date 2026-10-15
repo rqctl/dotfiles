@@ -99,6 +99,7 @@ sudo true && sudo tar -C / -cpf - \
     --exclude=$H/.var \
     $H etc \
   | pigz | gpg --symmetric --cipher-algo AES256 -o "$DEST/full-backup-$(date +%Y%m%d).tar.gz.gpg"
+sync                                    # flush to the drive before unplugging
 ```
 
 Look inside, or extract somewhere:
