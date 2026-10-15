@@ -50,7 +50,7 @@ for p in "${PATHS[@]}"; do
 done
 
 out="$DEST/pc-backup-$(date +%Y%m%d-%H%M).tar.gz.gpg"
-tar -cz --exclude=.kube/cache "${existing[@]}" \
+tar -c -I pigz --exclude=.kube/cache "${existing[@]}" \
     | gpg --symmetric --cipher-algo AES256 -o "$out"
 
 echo "✅ $out ($(du -h "$out" | cut -f1))"
