@@ -32,6 +32,9 @@
 - Keep PromQL top lists for few-row by-kind counts (a table can't hide 0 rows).
 - Top-N groupBy limits rank by the first query, not the formula: use a high limit (100).
 
+## Folder
+- One folder per service stack, under the top-level `SRE` folder, named after the stack, tagged `service:<service_name>`. Reuse it if it exists (`query-dashboard-folders`), else `create-dashboard-folder`. Put the service's dashboards in it.
+
 ## Applying
 - `update-dashboard-graph` for one widget; full `update-dashboard` only from a fresh `get-dashboard` (to remove widgets).
 - Tags: `team`, `service`, `origin-id` (DD id), `validated`.
