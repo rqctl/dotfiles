@@ -167,10 +167,9 @@ has_reviewer = false
 
 [[filter]]
 name = "In Review"
-scope = "instance"
+scope = ["instance", "!review_requested"]
 labels = ["sre-review::ask"]
 has_reviewer = true
-# exclude review_requested
 
 [[filter]]
 name = "Mine"
@@ -179,9 +178,8 @@ state = "all"
 
 [[filter]]
 name = "Participation"
-scope = ["review_requested", "assigned"]
+scope = ["review_requested", "assigned", "!authored"]
 state = "all"
-# exclude authored
 
 [[filter]]
 name = "🟢 Merged ship"
@@ -209,7 +207,7 @@ name = "Merged"
 scope = "project"
 state = "merged"
 path = "idp/resource-plane/infra-core"
-not_labels = ["sre-review::ship", "sre-review::show", "sre-review::ask"]
+labels = ["!sre-review::ship", "!sre-review::show", "!sre-review::ask"]
 updated_after_days = 30
 
 # [[filter]]

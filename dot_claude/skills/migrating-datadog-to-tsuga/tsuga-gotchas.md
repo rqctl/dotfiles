@@ -10,3 +10,7 @@
 | Widget needs its own time range | Not supported (only `timeBucket`); tables aggregate the whole window. |
 | `context.` prefix missing in metric metadata | `context.<attr>` still resolves in filters and groupBy. |
 | `*` in a dashboard filter value | Wildcard behaviour isn't checkable via the API: ask the user to check the UI. |
+| `aggregate-*` rejects `queries` | Each query is `{"aggregate": {"type": "max", "field": "<metric>"}, "filter": "..."}`. `aggregate-scalar` groupBy: one field per level (use two levels). `get-tool-schema` returns nothing useful: copy the shape from an existing monitor. |
+| Tool output "exceeds maximum" (notification rules, long timeseries) | Saved to a file: parse with `python3 -I`, don't re-query. Shapes differ: rules file = `[{type, text}]` with `text` = `[Resource ...] {json}`; timeseries file = `{series: [...]}`. |
+| Formula series in a timeseries | Returned with `id: "value"` next to `q1`, `q2`. |
+| Jira description edit (keeps task lists) | believe MCP `editJiraIssue`: `contentFormat: html` only, a `task-list` round-trips. claude.ai MCP: ADF, but `getJiraIssue` may return markdown despite `adf`: then don't rewrite, comment. Read back as markdown to check `[x]`. Edit a comment with `commentId`. |

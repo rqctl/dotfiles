@@ -53,6 +53,8 @@ dot() {
     [[ -n $f ]] || return
     chezmoi source-path "$f" &>/dev/null || chezmoi add --secrets=error "$f" || return
     [[ -z $tpl ]] || chezmoi chattr +template "$f" || return
+    # chezmoi edit expects its cache tmp dir to pre-exist; it won't create it itself.
+    mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/chezmoi/tmp"
     chezmoi edit --apply "$f"
 }
 

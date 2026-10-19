@@ -12,15 +12,18 @@ Rules: [monitors.md](monitors.md), [dashboards.md](dashboards.md), Tsuga quirks:
 
 ## Workflow
 1. **Inventory** both sides: Tsuga by name search (`searchQuery`) AND `service` tag (manual DD monitors often lack it); Datadog monitors, dashboards and SLOs for the service, including ones created after the migration run. Note which DD monitors paged, and for which envs. Check whether the Tsuga objects are managed as code (repo search): if so, change the code, not the API.
-2. **Data first**: for every metric/log field, check Tsuga has data under the real name, per env (high `limit` on every groupBy level). Empty = ingestion gap or renamed metric: fix or report it, don't polish an empty widget.
+2. **Data first**: for every metric/log field, check Tsuga has data under the real name, per env (high `limit` on every groupBy level). Run every imported filter on its own too: DD tags (`landing-zone:gcp`, `kube_*`) often don't exist in Tsuga and a filter matching nothing makes a monitor that never evaluates. Empty = ingestion gap or renamed metric: fix or report it, don't polish an empty widget.
 3. **Monitors**: apply monitors.md. Set `validated:review` when done.
 4. **Dashboards**: apply dashboards.md. Re-fetch the live dashboard before every write: the user edits in the UI.
-5. **Verify**: replay each monitor query over 24h-7d with a bucket ≤ window/5 (no false positives; past incidents would fire). Run every dashboard widget query; KPIs consistent with lists. Only then delete merged per-env copies. State what the API can't prove (rendering, wildcards).
-6. **Report**: what changed, what was dropped or lost (with ids) and why, anything firing now and why. Then offer a short "beyond the rules" plan (coverage gaps, dead or never-firing monitors, overlap, user-facing vs mechanics signals, dashboard trims), ranked by value. Plan only; apply nothing until the user picks.
+5. **Verify**: replay each monitor query over 24h-7d with a bucket ≤ window/5 (no false positives; past incidents would fire). Run every dashboard widget query; KPIs consistent with lists. Only then delete merged per-env copies.
+   A replay can't prove delivery. Unless a real alert and recovery of this monitor are already in the tests channel, propose the live test (monitors.md), then ask the user for `validated:true`.
+   State what the API can't prove (rendering, wildcards).
+6. **Report**: what changed, what was dropped or lost (with ids) and why, anything firing now and why. Update the Jira ticket if one is given (gotchas: Jira row). Then offer a short "beyond the rules" plan (coverage gaps, dead or never-firing monitors, overlap, user-facing vs mechanics signals, dashboard trims), ranked by value. Plan only; apply nothing until the user picks.
 
 ## Ownership boundaries
 - `validated` (monitors and dashboards): new or reworked by you = `review`; only the user sets `true`, unless they explicitly delegate it.
-- The Datadog originals stay active until the Tsuga replacement is `validated:true`; deleting them is a separate step: ask first.
+- The Datadog originals stay active until the Tsuga replacement is `validated:true`; deleting them is a separate step: ask first. Check for a delete tool (the Datadog SDK sandbox was read-only in 2026-10); otherwise verify tags (no `managed_by`) and `checkCanDeleteMonitor`, and the user deletes in the UI. Never write "removed" in Jira before it is.
+- A live test mutates a cluster: state the exact changes and get an explicit yes first.
 - Never create or activate a paging notification rule. If the routing rules monitors.md expects are missing, tell the user.
 - Merging per-env copies is the agreed default (report it). Dropping a monitor with no replacement: explain why, then ask.
 

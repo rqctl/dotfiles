@@ -48,6 +48,32 @@ spacing). It cannot clean what was already pushed: that stays in GitHub's histor
 A `{{ .key }}` that isn't declared yet makes the apply fail and leaves the file in `~`
 untouched; add the key and run `chezmoi apply`.
 
+### A managed file's live copy has drifted from the template
+
+Someone (you, or a tool) edited the file in `~` directly instead of through `dot`.
+`chezmoi status` shows `MM`; `chezmoi diff <file>` shows what differs.
+
+Don't assume the template is the one that's right — diff only shows what differs, not
+which side is correct. If the file has its own validator (a linter, `--check`, a `config
+test` subcommand), run it against both sides before deciding:
+
+```sh
+<tool> --config <file>                                      # the live file
+chezmoi cat <file> > /tmp/t && <tool> --config /tmp/t        # the template, rendered
+```
+
+To pull the live edits into the template, do **not** run `chezmoi add` on a file that
+has `{{ }}` directives: it overwrites the source with the literal rendered content,
+flattening every directive. `chezmoi add --autotemplate` doesn't fix this either — it
+re-templatizes by blindly substituting any `chezmoi.toml` value that matches a substring
+anywhere in the file, which mangles unrelated text (e.g. `.chezmoi.pathSeparator` is
+`/`, so it rewrites every `/` in the file, not just paths).
+
+Instead, edit the source directly: `dot <file>` (no `-t`, it's already a template) opens
+it in `$EDITOR` and applies on save. Copy over only the lines that actually changed,
+leave every `{{ }}` directive as it is, then confirm with `chezmoi diff <file>` (empty)
+and, if there's one, the tool's own validator against the rendered output.
+
 ## Backup and restore
 
 **Backup**, before wiping the old PC (asks for sudo, then an archive passphrase):

@@ -62,7 +62,8 @@ APT_PACKAGES=(
     htop                    # interactive process viewer
     iftop                   # bandwidth usage per connection
     inotify-tools           # watch files for changes
-    ksnip
+    kooha                   # Screen Recorder video + audio
+    ksnip                   # Screen snapshoter + edit quickly
     lftp                    # scriptable FTP/SFTP client
     libffi-dev              # shared library for language bindings
     libssl3t64              # OpenSSL 3, needed by VS Code's extension signature check
@@ -72,7 +73,7 @@ APT_PACKAGES=(
     ncdu                    # NCurses disk usage analyzer
     net-tools               # ifconfig, netstat, route
     ngrep                   # grep for network packets
-    parallel
+    parallel                # Allow executing jobs in parallel
     pigz                    # parallel gzip compression
     read-edid               # monitor EDID information
     shellcheck              # shell script static analysis

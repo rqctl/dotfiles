@@ -94,8 +94,12 @@ reproduce it live and bisect down to the real root cause before editing code.
 # Git
 
 Never run `git push` (including `--force`/`--force-with-lease`) on my behalf,
-on any branch. Commit freely, but leave pushing to me.
+on any branch.
 
+- Never create a commit unless I explicitly ask for one. When I do ask,
+  commit with a title only — no body, no footer (no explanation, no
+  attribution trailer). Suggest the title to me instead of writing one
+  yourself outright.
 - Never `git checkout -B <branch> origin/<other-branch>` (or any equivalent
   that resets a branch from a *different* remote ref) to rebuild/reset a
   branch's content. Besides resetting content, it silently resets the
