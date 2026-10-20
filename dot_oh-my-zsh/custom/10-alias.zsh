@@ -152,8 +152,6 @@ upgrade() {
     _upgrade_omz
 }
 
-
-
 ## -----  Certificates  -----
 
 alias x509l="openssl x509 -noout -text -in"
