@@ -18,7 +18,9 @@ Audit every field against the Datadog original: name, message, query, thresholds
 
 ## Message
 - Tsuga syntax only `{{ variable }}` (full list: threshold monitor doc). Useful: `alert_status`, `alert_transition`, `alert_triggered_by` (grouped monitors only), `alert_values[0]`, `alert_thresholds[0]`, `alert_timeframe`, `alert_data_url`, `monitor_url`, `dashboard_url`. Unknown variables render literally. No rounding filter works.
-- Remove `{{#is_alert}}`, `{{/is_alert}}`, `{{!-- --}}`, `{{x.name}}`, `@` handles, Datadog links, false "managed by Terraform" notes, "Migration notes". A DD notebook runbook link goes with them: report that the runbook needs porting.
+- `{{ dashboard_url }}` only when the monitor has a `dashboardId`: in tests a monitor using it without one sent no notification (tsuga-gotchas.md).
+- Remove `{{#is_alert}}`, `{{/is_alert}}`, `{{!-- --}}`, `{{x.name}}`, `@` handles, Datadog links, false "managed by Terraform" notes, "Migration notes". A DD notebook link goes with them: read it (`get_datadog_notebook`), report whether it is a runbook or an incident write-up, and ask what to keep; its monitor recommendations feed the "beyond the rules" plan.
+- Style: copy the shape of an existing `validated:true` monitor of the same team (`query-monitors` on the `validated` tag) for message style and grouping.
 - One message for alert, no-data and recovery: state-neutral wording plus `{{ alert_transition }}` (it renders as `from unknown to alert` on a first firing).
 - Fix DD copy/paste errors.
 
@@ -36,6 +38,7 @@ Audit every field against the Datadog original: name, message, query, thresholds
 - Don't copy a DD `evaluation_delay` as `time-offset` unless Tsuga data lags. No `fill: zero` on lagging metrics.
 - Ratio monitors: a counter with no errors may have no series. That means no errors: use `noDataBehavior: resolve` so a stale alert clears.
 - **Thresholds**: compare each DD threshold with 7d real values per env. Units change (DD `container.cpu.usage` nanocores, Tsuga cores: `4e9` → `4`). Retuning is fine (keep the intent, replay clean, list each change as old/new/why in the report); on a monitor already `validated:true`, only after the user's go-ahead.
+- **Replica gap** (deployment unavailable): `max(desired) - average(available) > 0.5` over 5m, grouped by env. With 0.5 one missing replica must last over half the window (shorter blips don't fire). A threshold at or above the replica count never fires (DD `unavailable > 2` on 2-replica envs): check desired per env. Replay first: in one env it fired 5 times in 7d at `> 0` and 2 at `> 0.5` (cause not checked).
 - **Counters**: DD `avg:` averages across series (per-pod mean) and over time; a Tsuga `sum` across pods is not the same. Query both in Datadog (`avg:` vs `sum:`, same grouping, 5m buckets) to see the scale and whether the threshold ever fired, then choose. Never write "equivalent" without that check.
 - **Histograms**: DD `.bucket`/`.sum` averages are meaningless: use `percentile` (e.g. p95). `count` on a histogram counts observations (e.g. `return_code:429`).
 - **No data on an error/exception/pressure metric means healthy** (no 5xx series, no 429, a metric emitted only above a utilization floor): report it as expected, never as dead, never make it alert, say it can't be replayed. If data appears, that is the issue.
@@ -54,7 +57,7 @@ Audit every field against the Datadog original: name, message, query, thresholds
 - Drop import tags: `source`, `origin`, `context`, `migration-status`, false `managed_by:terraform`.
 - Priority: keep the DD priority unless clearly wrong; imported priorities don't reflect paging.
 - `owner`/`permissions`: keep the import's; if the owner isn't the service's team, ask the user once.
-- `oncall:true` only for monitors whose DD version paged. Read the handles from the DD monitor, then ask the user once, up front, which of them page; don't infer it from handle names. Tag it even when no paging rule is active (check `list-notification-rules`), and list the tagged monitors in the report: unrouted paging blocks deleting the DD original. If only some envs paged, the paging rule must filter on them (e.g. `context.env:(prd OR shd)`; the user sets it), or keep those envs as their own monitor if the rule can't filter on env. Unverified whether a rule can match alert-group attributes: read the rule or ask.
+- `oncall:true` only for monitors whose DD version paged. Read the recipients from the DD monitor (`notifications` and message handles). It pages only if one is a webhook or a handle containing `on-call`, `oncall`, `on_call` or `incident.io`/`incident-io`. Slack handles such as `@team-sre` don't page. Decide from that, don't ask; ask only about a handle that is neither clearly Slack nor clearly paging. Tag it even when no paging rule is active (check `list-notification-rules`), and list the tagged monitors in the report: unrouted paging blocks deleting the DD original. If only some envs paged, the paging rule must filter on them (e.g. `context.env:(prd OR shd)`; the user sets it), or keep those envs as their own monitor if the rule can't filter on env. Unverified whether a rule can match alert-group attributes: read the rule or ask.
 - Routing is by notification rules, not `@` handles (check `list-notification-rules`): `NOT validated:true` → tests channel, `validated:true` → team channel, `validated:true AND oncall:true` → paging (user activates).
 
 ## Live test (replay can't prove alert + recovery)
@@ -63,8 +66,10 @@ Skip it if a real alert and recovery of this monitor are already in the tests ch
 - When breaking, break the monitor's own condition, not just the component (e.g. scaling to 0 also lowers a `desired` side). Replay the formula at 1m to see the break arrive.
 - No break needed, or the component can't be broken (managed, e.g. GKE's Cilium; or the signal already exists): change nothing on the cluster. On the clone, set the filter to the test env alone if needed, then lower the threshold below the current value.
 - Don't shorten the window (detection took about 2 minutes on a 15-30m window).
-- Read the alert and recovery in the tests Slack channel (`believe-alerts-team-sre-tests`): `get-monitor` shows no alert state. The channel is busy: bound `slack_read_channel` with `oldest` and `latest` and match the monitor id.
-- Every edit of the clone's definition re-notifies its groups and can swallow the recovery (no recovery seen after 17-24 min in two tests): edit once, don't keep editing to force a recovery; after one window report it as unproven, don't wait longer.
+- The clone copies the monitor exactly (message, `dashboardId`, groupBy), changing only what the test needs.
+- Ratio on an error counter with no current errors: a clone numerator that is always present (another rcode) at the real threshold proves delivery; delivery on the real numerator stays unproven (not isolated: a lowered threshold on it was never tested without the `dashboard_url` confound).
+- Read the alert and recovery in the tests Slack channel (`believe-alerts-team-sre-tests`): `get-monitor` shows no alert state. The channel is busy: bound `slack_read_channel` with `oldest` and `latest` and match the monitor id. Wait with a background `sleep`, don't poll; the alert came about 2-3 min after creation in 5 clones, and the recovery within a few minutes of the single edit in 2 clones (5m windows).
+- Every edit of the clone's definition re-notifies its groups and can swallow the recovery (no recovery seen after 17-24 min in two tests): edit once, don't keep editing to force a recovery; after one window report it as unproven, don't wait longer. If the MCP session expires mid-test the clones stay in place: re-auth, then delete them by the `live-test` tag.
 - Delete the clone, restore everything you changed on the component and check it is healthy.
 
 For k8s workloads deployed by ArgoCD (values repo; `git status` first, never commit or push):

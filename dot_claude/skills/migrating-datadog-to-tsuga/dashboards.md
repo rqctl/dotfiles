@@ -7,7 +7,8 @@
 - Remove the "Review required" note, `[TO_KEEP]` prefixes, Datadog links, DD template-variable names.
 - Status breakdown charts (sync, health): filter out the dominant OK state (`NOT context.sync_status:Synced`), else it hides the series that matter.
 - Empty request/limit metrics usually mean the pod spec sets none: check manifests before blaming Tsuga.
-- Before investing in new ingestion for a missing source, check whether anything alerts on it.
+- Before investing in new ingestion for a missing source, check whether anything alerts on it, and whether Tsuga already has an equivalent signal from another component (e.g. node-local-dns `coredns_*` instead of kube-dns `skydns_*`). The collector scrapes by pod annotation (one `prometheus.io/port` per pod); a dedicated scrape job is a hardcoded addition to the collector values: ask first.
+- DD integration dashboards (numeric id, `/dash/integration/`) are Datadog-provided: list them in the report as not migrated and let the user decide. A Tsuga dashboard of another team on the same component (other owner) is theirs: don't edit it; ask whether to build an SRE one.
 
 ## Rebuilding from imports
 - Imports are often several overlapping dashboards (one with a widget per metric). Build one dashboard per stack from the kept DD dashboards' sections (`[TO_KEEP]` ones; the Tsuga import still holds their queries and layout, read it from the saved output). Size it for what they showed. Merge duplicates (avg/max/sum variants, dozens of conntrack series) into one widget; drop "Not migrated" notes.
@@ -46,7 +47,7 @@
 - Top-N groupBy limits rank by the first query, not the formula: use a high limit (100).
 
 ## Folder, applying
-- One folder per service stack, under the top-level `SRE` folder, named after the stack, tagged `service:<service_name>`. Reuse it if it exists (`query-dashboard-folders`), else `create-dashboard-folder`.
+- One folder per service stack, under the top-level `SRE` folder, named after the stack, tagged `service:<service_name>` (several `service` tags are accepted for a multi-service stack). Reuse it if it exists (`query-dashboard-folders`), else `create-dashboard-folder` with `parentFolderId` = the `SRE` folder id.
 - `update-dashboard` with `graphs` replaces all widgets (filters, tags, folder kept when omitted; don't overwrite the user's default filter value); only from a fresh `get-dashboard`. `update-dashboard-graph` for one widget. No delete-widget call: deleting means resending the full `graphs` array (copy the compact JSON of the `get`, drop widgets, fix the layout). A `filters`-only `update-dashboard` is safe.
-- Widget shapes (copy from an existing dashboard): `timeseries` queries `[{aggregate, filter?, functions: []}]` + `visibleSeries`; `groupBy` one field per level; `query-value-promql` `queries: ["..."]`.
+- Widget shapes (copy from an existing dashboard): `timeseries` queries `[{aggregate, filter?, functions: []}]` + `visibleSeries`; `groupBy` one field per level; `query-value-promql` `queries: ["..."]`. A widget with a `formula` takes `visibleSeries` with one flag per query plus one for the formula (`[false, false, true]` hides the inputs); `thresholds: [{value, level}]` draws a marker (both accepted by the API, rendering unchecked).
 - Tags: `team`, `service`, `origin-id` (DD id); no `validated` tag (the folder organization validates implicitly). Link: `https://app.tsuga.com/dashboards/<id>`. Owner: the team that owns the service's monitors; if the import's owner differs, ask the user once instead of leaving it.
