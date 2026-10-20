@@ -11,6 +11,7 @@ alias gamend='git add $(gpwd) && git commit --amend --no-edit && git push --forc
 alias gamendnoci='git add $(gpwd) && git commit --amend --no-edit && git push --force-with-lease -o ci.skip;'
 alias gps='git pull --autostash'
 alias gotoc='open $(echo $(git remote get-url origin | sed -E "s#^(git@([^:]+):|https://([^/]+)/)#https://\2\3/#; s/\.git$//")/-/commit/$(git rev-parse @{u})) &>/dev/null &'
+alias gotomr='glab mr view --web'
 alias gdiff='(git --no-pager diff --name-only --diff-filter=d --merge-base $(_git_default_branch) -- ; git ls-files --full-name --others --exclude-standard :/) | sort -fu'
 
 # Colors by git status: A/?? green, D/U red, everything else (M, R, C, T...) yellow.
