@@ -83,11 +83,12 @@ APT_PACKAGES=(
     tree                    # recursive directory listing
     tshark                  # Wireshark command line
     vim                     # text editor
+    vlc                     # Video reader
     wget                    # network downloader
     wireshark               # packet analyzer
     wl-clipboard            # Wayland clipboard (wl-copy, wl-paste)
     xclip                   # clipboard command-line utility
-    whois
+    whois                   # Determine owner's IP
     zlib1g-dev              # compression library headers
     zsh                     # Z shell
 )
