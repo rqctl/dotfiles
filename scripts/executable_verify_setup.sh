@@ -117,6 +117,8 @@ chk_list "apt repos added" has_repo spotify.list mozilla.list cloudflare-client.
     1password.list docker.list synaptics.list
 chk "Firefox: Mozilla repo wins, Ubuntu's snap package blocked" \
     '[ -f /etc/apt/preferences.d/firefox-deb-nosnap ] && ! snap list firefox'
+chk "Firefox: AppArmor profile lets its sandbox create user namespaces" \
+    'sudo -n grep -q firefox-userns /sys/kernel/security/apparmor/profiles'
 CODE_EXTS=$(code --list-extensions 2>/dev/null)
 chk_list "VS Code extensions" has_vscode "${VSCODE_EXTENSIONS[@]}"
 chk_list "standalone binaries" has_cmd docker-credential-gcr vault-token-helper claude mise

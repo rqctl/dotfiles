@@ -307,6 +307,18 @@ if [ ! -f /etc/apt/sources.list.d/mozilla.list ]; then
     log "$GREEN" "✅ Successfully installed Firefox."
 fi
 
+# Ubuntu's shipped firefox profile never attaches to the Mozilla build, so its sandbox
+# is denied user namespaces. Written unconditionally so re-runs fix a broken state.
+sudo tee /etc/apparmor.d/firefox-userns > /dev/null << 'EOF'
+abi <abi/4.0>,
+include <tunables/global>
+
+profile firefox-userns /usr/lib/firefox/firefox-bin flags=(unconfined) {
+  userns,
+}
+EOF
+sudo apparmor_parser -r /etc/apparmor.d/firefox-userns
+
 # Install Cloudflare Warp
 if ! command -v warp-cli &>/dev/null; then
     log "$BLUE" "\n➔ Installing Cloudflare Warp..."
