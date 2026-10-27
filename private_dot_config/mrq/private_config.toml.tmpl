@@ -23,7 +23,7 @@ url = "https://{{ .org.gitlabHost }}"
 
 # timeout_secs = 20
 # max_concurrent_requests = 4
-max_results = 40                  # per filter, 1..=500; a [[filter]] can override it
+max_results = { open = 40, closed = 40 }   # per filter, each 1..=500; closed also caps merged-only filters
 
 [refresh]
 # Seconds between refresh cycles. The minimum is 30 — below that mrq refuses to start
@@ -100,7 +100,7 @@ columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assign
 # red = "#ff5555"
 
 [sort]
-# column = "updated"                # any key from [ui].columns
+# column = "created"                  # any key from [ui].columns
 # order = "desc"                    # asc | desc
 
 # Sink drafts below non-drafts when drafts are shown.
@@ -157,13 +157,14 @@ columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assign
 # show_drafts = false               # per-filter override of [ui].show_drafts
 # columns = ["approved", "author", "title", "age", "branch:wide"]   # per-filter override of [ui].columns
 # notify = true                     # per-filter override of [notifications].enabled
-# max_results = 40                  # per-filter override of [gitlab].max_results
+# max_results = { closed = 100 }    # per-filter override of [gitlab].max_results; a key left out keeps the global value
 
 [[filter]]
 name = "Queue"
 scope = "instance"
 labels = ["sre-review::ask"]
 has_reviewer = false
+sort = { column = "age", order = "asc" }
 
 [[filter]]
 name = "In Review"
