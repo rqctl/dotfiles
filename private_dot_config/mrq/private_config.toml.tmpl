@@ -1,8 +1,9 @@
 # vim: set filetype=toml
 # mrq configuration
 #
-# Every key below is commented out and shows mrq's built-in default, so this file as
-# written behaves exactly as if it did not exist. Uncomment a line to change it.
+# Every key below is commented out and shows mrq's built-in default, or an example where
+# there is none, so this file as written behaves exactly as if it did not exist. Uncomment
+# a line to change it.
 #
 # Unknown keys are a hard error rather than being ignored, so a typo tells you about
 # itself at startup instead of looking like a bug in mrq.
@@ -23,7 +24,11 @@ url = "https://{{ .org.gitlabHost }}"
 
 # timeout_secs = 20
 # max_concurrent_requests = 4
-max_results = { open = 40, closed = 40 }   # per filter, each 1..=500; closed also caps merged-only filters
+
+# How many merge requests each filter fetches, 1..=500 per key. `open` caps open ones;
+# `closed` caps merged and closed ones together, for any state, so with state = "all"
+# recent merges cannot push open work out. A [[filter]] can override either key with its own.
+# max_results = { open = 40, closed = 40 }
 
 [refresh]
 # Seconds between refresh cycles. The minimum is 30 — below that mrq refuses to start
@@ -42,8 +47,11 @@ max_results = { open = 40, closed = 40 }   # per filter, each 1..=500; closed al
 # the font question only; colours come from [skin] below.
 # ascii = false
 
-dim_drafts = "theirs"
 show_drafts = true
+
+# Which drafts are greyed out: all, mine (authored by you), theirs (authored by someone
+# else) or none.
+dim_drafts = "theirs"
 # relative_times = true
 
 # How the ASG / APPROVER / REVIEWER / MERGED BY columns name people. One of:
@@ -70,11 +78,12 @@ link = "none"
 
 # set_terminal_title = true
 
-# Display order, left to right. Any subset of these keys (plus branch, merged_by and status), each at most once;
-# `sort.column` below has to be one of them. A ":wide" suffix hides that column until wide mode
-# (w) is toggled on; approved, author, repo, title and pipeline identify a row and can never
-# be wide-only. merged_by is not in the default list; when added, it only shows while a merged
-# merge request is on screen. A [[filter]] can override the whole list with its own `columns`.
+# Display order, left to right. Any subset of these keys, plus branch, merged_by and
+# status, each at most once; `sort.column` below has to be one of them. A ":wide" suffix
+# hides that column until wide mode (w) is toggled on; approved, author, repo, title and
+# pipeline identify a row and can never be wide-only. merged_by only shows while a merge
+# request merged by someone other than its author is on screen. A [[filter]] can override
+# the whole list with its own `columns`.
 columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assigned", "approver:wide", "reviewer:wide", "merged_by:wide", "age", "updated", "diff:wide"]
 
 # Start with wide mode on; w still toggles it.
@@ -100,7 +109,7 @@ columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assign
 # red = "#ff5555"
 
 [sort]
-# column = "created"                  # any key from [ui].columns
+# column = "updated"                # any key from [ui].columns
 # order = "desc"                    # asc | desc
 
 # Sink drafts below non-drafts when drafts are shown.
@@ -112,8 +121,10 @@ columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assign
 # auto | osc9 | osc777 | command | none
 # backend = "auto"
 
-# Used when backend = "command"; {title} and {body} are substituted.
+# Used when backend = "command"; {title} and {body} are substituted, already
+# shell-quoted, so do not put quotes around them.
 # command = ""
+# e.g. command = "notify-send {title} {body}"
 
 # bell = true
 
@@ -153,11 +164,9 @@ columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assign
 # are only accepted by the group, project and instance scopes. Setting one on assigned,
 # review_requested or authored is a startup error rather than a filter that silently does
 # nothing.
-# state = "opened"                  # opened | merged | closed | all
-# show_drafts = false               # per-filter override of [ui].show_drafts
-# columns = ["approved", "author", "title", "age", "branch:wide"]   # per-filter override of [ui].columns
-# notify = true                     # per-filter override of [notifications].enabled
-# max_results = { closed = 100 }    # per-filter override of [gitlab].max_results; a key left out keeps the global value
+#
+# Any scope prefixed with `!` (`!assigned`, `!review_requested`, `!authored`) excludes
+# merge requests matching that relation to you, regardless of what included them.
 
 [[filter]]
 name = "Queue"
@@ -210,28 +219,35 @@ state = "merged"
 path = "idp/resource-plane/infra-core"
 labels = ["!sre-review::ship", "!sre-review::show", "!sre-review::ask"]
 updated_after_days = 30
+# state = "opened"                  # opened | merged | closed | all
+# show_drafts = false               # per-filter override of [ui].show_drafts
+# columns = ["approved", "author", "title", "age", "branch:wide"]   # per-filter override of [ui].columns
+# notify = true                     # per-filter override of [notifications].enabled
+#
+# Inline tables override the matching global table; a key left out keeps the global value.
+# sort = { column = "age", order = "asc" }   # per-filter override of [sort]
+# max_results = { open = 100 }               # per-filter override of [gitlab].max_results
 
 # [[filter]]
 # name = "Reviewing"
 # scope = "review_requested"
 
 # A list shows the union of its scopes, each merge request once. It may only combine
-# assigned, review_requested and authored.
+# assigned, review_requested and authored, plus any number of `!`-prefixed exclusions.
 # [[filter]]
 # name = "Needs my attention"
-# scope = ["assigned", "review_requested"]
+# scope = ["assigned", "review_requested", "!authored"]
 
 # [[filter]]
 # name = "Platform"
 # scope = "group"
 # path = "acme/platform"            # a GitLab full path, no leading or trailing slash
 # include_subgroups = true          # group scope only
-# labels = ["team::platform"]       # AND-ed
-# not_labels = ["wip"]
+# labels = ["team::platform", "!wip"]   # required labels AND-ed; `!x` excludes a label
 # author = "someuser"
 # assignee = "someuser"
 # reviewer = "someuser"
-# has_reviewer = false             # true = has a reviewer, false = has none; mutually exclusive with reviewer
+# has_reviewer = false              # true = has a reviewer, false = has none; mutually exclusive with reviewer
 # milestone = "24.Q3"
 # target_branch = "main"
 # updated_after_days = 30           # bounds the result set for large groups
@@ -285,3 +301,4 @@ updated_after_days = 30
 # clear_search    = ["esc"]
 # help            = ["?", "f1"]
 # log_menu        = ["shift-L"]
+# activity_menu   = ["shift-A"]
