@@ -14,6 +14,11 @@ alias gotoc='open $(echo $(git remote get-url origin | sed -E "s#^(git@([^:]+):|
 alias gotomr='glab mr view --web'
 alias gdiff='(git --no-pager diff --name-only --diff-filter=d --merge-base $(_git_default_branch) -- ; git ls-files --full-name --others --exclude-standard :/) | sort -fu'
 
+# Usage: gotof [path] — open a file/folder of the current dir on the forge, at the current branch.
+gotof() {
+    open "$(git remote get-url origin | sed -E "s#^(git@([^:]+):|https://([^/]+)/)#https://\2\3/#; s/\.git$//")/-/blob/$(git rev-parse --abbrev-ref HEAD)/$(git rev-parse --show-prefix)$1" &>/dev/null &
+}
+
 # Colors by git status: A/?? green, D/U red, everything else (M, R, C, T...) yellow.
 gdiffhuman() {
     (git --no-pager diff --name-status --merge-base $(_git_default_branch) --
