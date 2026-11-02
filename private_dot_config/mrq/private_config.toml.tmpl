@@ -23,12 +23,12 @@ url = "https://{{ .org.gitlabHost }}"
 # token = "glpat-..."
 
 # timeout_secs = 20
-# max_concurrent_requests = 4
+max_concurrent_requests = 10
 
 # How many merge requests each filter fetches, 1..=500 per key. `open` caps open ones;
 # `closed` caps merged and closed ones together, for any state, so with state = "all"
 # recent merges cannot push open work out. A [[filter]] can override either key with its own.
-# max_results = { open = 40, closed = 40 }
+max_results = { open = 20, closed = 20 }
 
 [refresh]
 # Seconds between refresh cycles. The minimum is 30 — below that mrq refuses to start
@@ -84,7 +84,7 @@ link = "none"
 # pipeline identify a row and can never be wide-only. merged_by only shows while a merge
 # request merged by someone other than its author is on screen. A [[filter]] can override
 # the whole list with its own `columns`.
-columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assigned", "approver:wide", "reviewer:wide", "merged_by:wide", "age", "updated", "diff:wide"]
+columns = ["approved", "author", "repo", "id", "title", "pipeline", "assigned", "approver:wide", "reviewer:wide", "merged_by:wide", "age", "updated", "diff"]
 
 # Start with wide mode on; w still toggles it.
 # wide = false
@@ -147,6 +147,13 @@ columns = ["approved", "author", "repo", "id:wide", "title", "pipeline", "assign
 # Empty means `open` on macOS and `xdg-open` on Linux.
 # command = ""
 
+# What makes a merge request READY: open, not a draft, carrying every label below and, with
+# `pipeline`, a passing head pipeline. Enables the `ready` column (time since it became
+# ready) and the per-filter `ready = true`. Unset by default.
+[ready]
+labels = ["sre-review::ask"]
+# pipeline = true
+
 # ---- filters ----------------------------------------------------------------------
 #
 # Each [[filter]] is a tab. The order here is the tab order and the 1..9 shortcuts.
@@ -173,6 +180,16 @@ name = "Queue"
 scope = "instance"
 labels = ["sre-review::ask"]
 has_reviewer = false
+columns = ["approved", "author", "repo", "id", "title", "pipeline", "assigned", "approver:wide", "reviewer:wide", "ready", "age", "updated", "diff"]
+sort = { column = "ready", order = "asc" }
+show_drafts = false
+ready = true
+
+[[filter]]
+name = "Queue (all)"
+scope = "instance"
+labels = ["sre-review::ask"]
+has_reviewer = false
 sort = { column = "age", order = "asc" }
 show_drafts = false
 
@@ -180,6 +197,7 @@ show_drafts = false
 name = "In Review"
 scope = ["instance", "!review_requested"]
 labels = ["sre-review::ask"]
+columns = ["approved", "author", "repo", "id", "title", "pipeline", "assigned", "approver", "reviewer", "merged_by:wide", "age", "updated", "diff"]
 has_reviewer = true
 
 [[filter]]
@@ -191,6 +209,7 @@ state = "all"
 name = "Participation"
 scope = ["review_requested", "assigned", "!authored"]
 state = "all"
+max_results = { open = 20, closed = 10 }
 
 [[filter]]
 name = "🟢 Merged ship"
@@ -224,6 +243,7 @@ updated_after_days = 30
 # show_drafts = false               # per-filter override of [ui].show_drafts
 # columns = ["approved", "author", "title", "age", "branch:wide"]   # per-filter override of [ui].columns
 # notify = true                     # per-filter override of [notifications].enabled
+# ready = true                      # only merge requests meeting [ready]
 #
 # Inline tables override the matching global table; a key left out keeps the global value.
 # sort = { column = "age", order = "asc" }   # per-filter override of [sort]
