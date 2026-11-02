@@ -19,7 +19,7 @@
 ## Filters
 - DD template variables → dashboard filters on real Tsuga attributes, same defaults. Don't hardcode them in every widget.
 - A dashboard filter applies to every widget: never filter on an attribute only some widgets carry (e.g. a field absent from one log type). Scope that widget instead.
-- A DD default value that narrows the whole dashboard (e.g. a path prefix) makes every widget cover a small slice of the traffic: leave it empty unless the dashboard's name says so.
+- A DD default value that narrows the whole dashboard (e.g. a path prefix, one app's namespace) makes every widget cover a small slice of the traffic: leave it empty, and keep that app out of the name and widget filters; it stays a filter value.
 - Check what a zero/unscored sentinel value means before counting it in a ratio.
 
 ## Empty widgets
@@ -29,11 +29,11 @@
 - 12-column grid.
 - Section headers: note `## Title` with `noteColor`, `h=1`, full width, rotating `blue.200` / `emerald.200` / `amber.200` / `red.200` / `violet.200`.
 - No intro or explanatory notes; keep only notes carrying reference data (links, ids, what the linked monitor covers).
-- KPI query-values `h=2`, `backgroundMode: background`. Colour conditions: shape unknown (in no existing widget), skip and report. Charts with `legendMode: table` need `h=6`.
+- KPI query-values `h=2`, `backgroundMode: background`. Colour conditions: imported query-values carry `conditions: [{operator, value, color}]`; rendering unchecked, so check the UI before relying on them. Charts with `legendMode: table` need `h=6`.
 - Order like DD; for traffic pairs, ingress left and egress right.
 
 ## Units
-- Every numeric widget has a normalizer: `data`/`B`, `duration`/unit, `percent` (0-100) vs `percent-fraction` (0-1), `custom` (`req/s`, `cores`, `Gbps`).
+- Every numeric widget has a normalizer: `data`/`B`, `duration`/unit, `percent` (0-100) vs `percent-fraction` (0-1), `custom` (`req/s`, `cores`, `Gbps`). `duration` didn't scale below its unit (2.75 ms in `s`: KPI `0s`, axis `<0.01s`): pick the unit of the values (`q1 * 1000` + `ms`).
 - Counters: use the rate function the DD widget had (`functions: [{"type": "per-minute"}]` or `per-second`); a plain `sum` of a delta counter changes scale with the zoom. Avoid `sum` on duplicated samples.
 - Gauge `sum` adds every series in a bucket (pod rotation shows 2-3): use `max` for "is there one?".
 - Decimal network bits: `q1 * 8 / 1000000000` + custom `Gbps` (built-in bit units are binary).

@@ -50,7 +50,7 @@ Audit every field against the Datadog original: name, message, query, thresholds
 - **`== 0` conditions** on traffic clear on residual bytes while the link is still down: compare the hourly average in a real outage with normal values and use a small threshold.
 - **Non-prod schedules**: ArgoCD sync windows deny syncs on int/sta/playground nights and weekends (`argocd-gcp-argo-apps`), and `offhours-shutdown` shuts non-prod resources down (its README and policies say which envs). Replay across a weekend; scope to prd/shd or expect the noise.
 - Replay: 1-2m buckets over 7d (saved file; if the server times out, narrow the filter or shorten the range before coarsening the buckets), rolling window in `python3 -I`, count firing episodes per group. Report how often it fires.
-- Logs/spans: Tsuga query syntax, not DD: no `-field` (use `NOT`), uppercase `AND`/`OR`/`NOT`, uppercase levels (`level:ERROR`), no `@` attribute prefix, span `duration` in ms. DD `trace.*` metrics → span metrics or a trace monitor.
+- Logs/spans: Tsuga query syntax, not DD: no `-field` (use `NOT`), uppercase `AND`/`OR`/`NOT`, uppercase levels (`level:ERROR`), no `@` attribute prefix, span `duration` in ms (not `context.duration`). Span errors: `status_code:error` matched, `status.code:STATUS_CODE_ERROR` and `statusCode:error` didn't. DD span tags can be missing: `type:redis` matched nothing, `span_attributes.db.system.name:redis` matched. DD `trace.*` metrics → span metrics or a trace monitor.
 
 ## Tags and routing
 - Keep `team`, `service`, `origin-id` (DD id), `validated`, plus meaningful ones (`env` when per-env).
