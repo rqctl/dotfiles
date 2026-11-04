@@ -30,8 +30,6 @@
 {{- end }}
     "superpowers@claude-plugins-official": true,
     "datadog@claude-plugins-official": true,
-    "slack@claude-plugins-official": true,
-    "i-have-adhd@i-have-adhd": true,
     "browser-use@anthropic-plugin-directory": true,
     "rust-analyzer-lsp@claude-plugins-official": true
   },
@@ -53,6 +51,12 @@
     }
   },
   "effortLevel": "medium",
+  "deniedMcpServers": [
+    { "serverName": "claude.ai Claude Docs" },
+    { "serverName": "claude.ai Costory" },
+    { "serverName": "claude.ai Figma" },
+    { "serverName": "claude.ai Siit" }
+  ],
   "tui": "fullscreen",
   "theme": "dark",
   "preferredNotifChannel": "notifications_disabled",

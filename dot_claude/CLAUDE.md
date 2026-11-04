@@ -99,7 +99,7 @@ on any branch.
 - Never create a commit unless I explicitly ask for one. When I do ask,
   commit with a title only — no body, no footer (no explanation, no
   attribution trailer). Suggest the title to me instead of writing one
-  yourself outright.
+  yourself outright in the form of `gmr 'branchName' 'conventionalCommitTitle'.
 - Never `git checkout -B <branch> origin/<other-branch>` (or any equivalent
   that resets a branch from a *different* remote ref) to rebuild/reset a
   branch's content. Besides resetting content, it silently resets the
