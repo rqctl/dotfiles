@@ -4,7 +4,7 @@
 [formatting]
 align_entries         = true  # Align entries across equal signs within each section
 array_auto_collapse   = false
-column_width          = 120   # Maximum line width before wrapping
+column_width          = 140   # Maximum line width before wrapping
 compact_inline_tables = false
 indent_tables         = true
 reorder_arrays        = false # (default)
