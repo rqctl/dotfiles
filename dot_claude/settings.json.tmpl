@@ -1,11 +1,20 @@
 {
+  "env": {
+    "BLV_METRICS_ANONYMOUS": "true"
+  },
   "permissions": {
     "allow": [
       "Bash({{ .chezmoi.homeDir }}/.claude/bin/clip:*)",
       "Bash({{ .chezmoi.homeDir }}/.claude/bin/clip *)"
     ]
   },
-  "model": "opus",
+  "model": "sonnet",
+  "deniedMcpServers": [
+    { "serverName": "claude.ai Claude Docs" },
+    { "serverName": "claude.ai Costory" },
+    { "serverName": "claude.ai Figma" },
+    { "serverName": "claude.ai Siit" }
+  ],
   "hooks": {
     "PostToolUse": [
       {
@@ -31,6 +40,7 @@
     "superpowers@claude-plugins-official": true,
     "datadog@claude-plugins-official": true,
     "browser-use@anthropic-plugin-directory": true,
+    "i-have-adhd@i-have-adhd": true,
     "rust-analyzer-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
@@ -51,12 +61,6 @@
     }
   },
   "effortLevel": "medium",
-  "deniedMcpServers": [
-    { "serverName": "claude.ai Claude Docs" },
-    { "serverName": "claude.ai Costory" },
-    { "serverName": "claude.ai Figma" },
-    { "serverName": "claude.ai Siit" }
-  ],
   "tui": "fullscreen",
   "theme": "dark",
   "preferredNotifChannel": "notifications_disabled",
