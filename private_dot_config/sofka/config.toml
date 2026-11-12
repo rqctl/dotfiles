@@ -48,7 +48,12 @@ palette = "crossplane-trace"
 command = "bash"
 args = [
   "-c",
-  "NS=\"$NAMESPACE\"; if [ \"$NS\" = \"-\" ] || [ -z \"$NS\" ]; then viddy --disable_auto_save -- crossplane resource trace --show-connection-secrets -c \"$CONTEXT\" \"$RESOURCE.$GROUP\" \"$NAME\" -o wide; else viddy --disable_auto_save -- crossplane resource trace --show-connection-secrets -c \"$CONTEXT\" -n \"$NS\" \"$RESOURCE.$GROUP\" \"$NAME\" -o wide; fi",
+  "if [ \"$1\" = \"-\" ] || [ -z \"$1\" ]; then viddy --disable_auto_save -- crossplane resource trace --show-connection-secrets -c \"$2\" \"$3\" \"$4\" -o wide; else viddy --disable_auto_save -- crossplane resource trace --show-connection-secrets -c \"$2\" -n \"$1\" \"$3\" \"$4\" -o wide; fi",
+  "crossplane-trace",
+  "$NAMESPACE",
+  "$CONTEXT",
+  "$RESOURCE.$GROUP",
+  "$NAME",
 ]
 output = "terminal"
 requires = ["viddy", "crossplane"]
