@@ -8,7 +8,7 @@ Managed with [chezmoi](https://www.chezmoi.io/). No secrets live in this repo.
 |---|---|
 | Edit or add any config file | `dot` (fzf picker) or `dot ~/.some/file` |
 | Back it up | `chezmoi cd`, `git commit -am "..."`, `git push` |
-| A file holds a private value | `dot -t <file>`, see below |
+| A file holds a private value | `dot <file>`, see below |
 | What's managed, and how | `dot -l` |
 
 `dot` edits the source and applies it, for plain files and templates alike. A file
@@ -34,11 +34,12 @@ Managed or not, same two steps:
 
 ```sh
 chezmoi edit-config      # only if the value is new: add it under [data] or [data.org]
-dot -t <file>            # makes it a template, then replace the value with {{ .key }}
+dot <file>               # replace the value with {{ .key }}, answer y to make it a template
 ```
 
 e.g. `{{ .gitWorkEmail }}`, `{{ .org.gitlabHost }}`. The rendered file in `~` stays
-identical; only the repo copy holds the placeholder.
+identical; only the repo copy holds the placeholder. Removing the last `{{` turns a
+template back into a plain file on its own.
 
 Only declared values are protected: gitleaks and `dot` recognise tokens, not personal
 data such as a card number or an email. Once a value is in `chezmoi.toml`, the hook

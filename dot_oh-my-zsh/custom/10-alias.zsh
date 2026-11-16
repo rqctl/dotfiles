@@ -18,9 +18,9 @@ alias sk='sofka'
 
 ## ----- Dotfiles -----
 
-# Usage: dot [-t] [file] | dot -l
+# Usage: dot [file] | dot -l
 # Edit a config file through chezmoi and apply it; an unmanaged file is added first.
-# No file: pick a managed one with fzf. -t: make it a template first (see README).
+# No file: pick a managed one with fzf. Template or not follows the content (see README).
 # -l: list managed files with their type, sorted by path.
 dot() {
     if [[ $1 == -l ]]; then
@@ -47,15 +47,23 @@ dot() {
         done
         return
     fi
-    local tpl; [[ $1 == -t ]] && { tpl=1; shift; }
     # symlink mode: plain files are listed as symlinks
     local f=${1:-$(chezmoi managed --include=files,symlinks --path-style=absolute | fzf)}
     [[ -n $f ]] || return
     chezmoi source-path "$f" &>/dev/null || chezmoi add --secrets=error "$f" || return
-    [[ -z $tpl ]] || chezmoi chattr +template "$f" || return
     # chezmoi edit expects its cache tmp dir to pre-exist; it won't create it itself.
     mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/chezmoi/tmp"
-    chezmoi edit --apply "$f"
+    chezmoi edit "$f" || return
+    # .tmpl must match the content: a template without {{ is a plain file, and
+    # literal {{ (Helm, Go) is common, so becoming a template needs a yes.
+    local src=$(chezmoi source-path "$f")
+    if [[ $src == *.tmpl ]]; then
+        grep -q '{{' "$src" || chezmoi chattr -- -template "$f" || return
+    elif grep -q '{{' "$src"; then
+        read -q "?Contains {{: make $f a template? [y/N] " && chezmoi chattr +template "$f"
+        echo
+    fi
+    chezmoi apply "$f"
 }
 
 ## ----- Cleaning -----

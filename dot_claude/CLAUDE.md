@@ -100,6 +100,7 @@ on any branch.
   commit with a title only — no body, no footer (no explanation, no
   attribution trailer). Suggest the title to me instead of writing one
   yourself outright in the form of `gmr 'branchName' 'conventionalCommitTitle'.
+- Unless asked, dont' create the local branch. The `gmr` function handles that.
 - Never `git checkout -B <branch> origin/<other-branch>` (or any equivalent
   that resets a branch from a *different* remote ref) to rebuild/reset a
   branch's content. Besides resetting content, it silently resets the
