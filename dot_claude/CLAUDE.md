@@ -23,6 +23,9 @@ safe/needed — a few lines, not a report.
   restating context the reviewer already has. Link an issue/ticket instead
   of re-explaining it inline.
 - Prefer: what changed, why, anything risky/non-obvious. Nothing else.
+- Drafts I'll paste elsewhere (Slack, Jira, email): plain text between two
+  `---` horizontal rules, never in a `>` blockquote (its bar breaks
+  copy-paste).
 
 # Code comments
 
