@@ -1,6 +1,6 @@
 ## ----- Global -----
 
-alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
+alias -g -- --help='--help 2>&1 | PAGER="" bat --language=help --style=plain'
 alias -g XSC="| xclip -sel c" # On MacOS, swap xclip for pbcopy.
 alias -g SCB="SKIP=commitizen-branch"
 
@@ -54,13 +54,13 @@ dot() {
     # chezmoi edit expects its cache tmp dir to pre-exist; it won't create it itself.
     mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/chezmoi/tmp"
     chezmoi edit "$f" || return
-    # .tmpl must match the content: a template without {{ is a plain file, and
-    # literal {{ (Helm, Go) is common, so becoming a template needs a yes.
+    # .tmpl must match the content: no template markers means a plain file, and
+    # literal markers are common (Helm, Go), so becoming a template needs a yes.
     local src=$(chezmoi source-path "$f")
     if [[ $src == *.tmpl ]]; then
-        grep -q '{{' "$src" || chezmoi chattr -- -template "$f" || return
-    elif grep -q '{{' "$src"; then
-        read -q "?Contains {{: make $f a template? [y/N] " && chezmoi chattr +template "$f"
+        grep -q '[{][{]' "$src" || chezmoi chattr -- -template "$f" || return
+    elif grep -q '[{][{]' "$src"; then
+        read -q "?Contains template markers: make $f a template? [y/N] " && chezmoi chattr +template "$f"
         echo
     fi
     chezmoi apply "$f"
